@@ -1,0 +1,167 @@
+.container {
+    max-width: 100%;
+    margin: 0 auto;
+    padding: var(--space-xl) var(--space-md);
+    color: var(--fg-primary);
+    overflow-x: hidden;
+}
+
+.header {
+    margin-bottom: var(--space-2xl);
+}
+
+.monthNavigation {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    margin-bottom: var(--space-sm);
+}
+
+.navButton {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--fg-secondary);
+    padding: var(--space-xs);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+}
+
+.navButton:hover {
+    background-color: var(--bg-hover);
+    color: var(--fg-primary);
+}
+
+.monthTitle {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--fg-primary);
+    letter-spacing: -0.02em;
+}
+
+.tableContainer {
+    overflow-x: auto;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-primary);
+    /* Custom scrollbar for better UX */
+    scrollbar-width: thin;
+    scrollbar-color: var(--fg-secondary) var(--bg-secondary);
+}
+
+.table {
+    border-collapse: collapse;
+    min-width: 100%;
+}
+
+.th,
+.td {
+    padding: var(--space-sm);
+    border-bottom: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+    text-align: left;
+}
+
+.th {
+    background: var(--bg-secondary);
+    font-weight: 600;
+    color: var(--fg-secondary);
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+.thDay {
+    text-align: center;
+    min-width: 30px;
+    font-size: 0.75rem;
+}
+
+.goalColumn {
+    position: sticky;
+    left: 0;
+    background: var(--bg-primary);
+    z-index: 10;
+    min-width: 200px;
+    border-right: 2px solid var(--border-color);
+}
+
+.th.goalColumn {
+    background: var(--bg-secondary);
+    z-index: 20;
+}
+
+.goalInput {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: var(--fg-primary);
+    font-size: 0.9rem;
+    font-family: var(--font-sans);
+    outline: none;
+}
+
+.goalInput::placeholder {
+    color: var(--fg-secondary);
+    opacity: 0.5;
+}
+
+.checkboxCell {
+    text-align: center;
+    padding: 4px;
+}
+
+.checkbox {
+    width: 16px;
+    height: 16px;
+    border: 1px solid var(--fg-secondary);
+    border-radius: 3px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.1s;
+}
+
+.checkbox.checked {
+    background-color: var(--accent-orange);
+    border-color: var(--accent-orange);
+}
+
+.checkIcon {
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+.addGoalBtn {
+    margin-top: var(--space-md);
+    background: none;
+    border: none;
+    color: var(--fg-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm);
+    border-radius: var(--radius-sm);
+    transition: background 0.2s;
+}
+
+.addGoalBtn:hover {
+    background: var(--bg-hover);
+    color: var(--fg-primary);
+}
+
+.deleteBtn {
+    opacity: 0;
+    color: var(--fg-secondary);
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.tr:hover .deleteBtn {
+    opacity: 1;
+}

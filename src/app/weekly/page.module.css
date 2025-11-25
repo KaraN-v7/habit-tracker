@@ -1,0 +1,165 @@
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--space-xl) var(--space-md);
+    color: var(--fg-primary);
+}
+
+.header {
+    margin-bottom: var(--space-2xl);
+}
+
+.weekNavigation {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    margin-bottom: var(--space-sm);
+}
+
+.navButton {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--fg-secondary);
+    padding: var(--space-xs);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+}
+
+.navButton:hover {
+    background-color: var(--bg-hover);
+    color: var(--fg-primary);
+}
+
+.weekTitle {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--fg-primary);
+    letter-spacing: -0.02em;
+}
+
+.tableContainer {
+    overflow-x: auto;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-primary);
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 800px;
+}
+
+.th,
+.td {
+    padding: var(--space-md);
+    border-bottom: 1px solid var(--border-color);
+    text-align: left;
+}
+
+.th {
+    background: var(--bg-secondary);
+    font-weight: 600;
+    color: var(--fg-secondary);
+    font-size: 0.9rem;
+}
+
+.thDay {
+    text-align: center;
+    width: 80px;
+}
+
+.goalInput {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: var(--fg-primary);
+    font-size: 1rem;
+    font-family: var(--font-sans);
+    outline: none;
+}
+
+.goalInput::placeholder {
+    color: var(--fg-secondary);
+    opacity: 0.5;
+}
+
+.checkboxCell {
+    text-align: center;
+}
+
+.checkbox {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--fg-secondary);
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.checkbox.checked {
+    background-color: var(--accent-green);
+    border-color: var(--accent-green);
+}
+
+.checkIcon {
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.addGoalBtn {
+    margin-top: var(--space-md);
+    background: none;
+    border: none;
+    color: var(--fg-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm);
+    border-radius: var(--radius-sm);
+    transition: background 0.2s;
+}
+
+.addGoalBtn:hover {
+    background: var(--bg-hover);
+    color: var(--fg-primary);
+}
+
+.deleteBtn {
+    opacity: 0;
+    color: var(--fg-secondary);
+    cursor: pointer;
+    transition: opacity 0.2s;
+    background: none;
+    border: none;
+}
+
+.tr:hover .deleteBtn {
+    opacity: 1;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .weekTitle {
+        font-size: 1.5rem;
+    }
+
+    .th,
+    .td {
+        padding: var(--space-sm);
+    }
+
+    .deleteBtn {
+        opacity: 1;
+        /* Always show delete button on mobile */
+    }
+}

@@ -1,0 +1,344 @@
+:root {
+  /* Notion-like Color Palette (Light Mode) */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f7f7f5;
+  /* Sidebar / Hover */
+  --bg-hover: #efefef;
+  --fg-primary: #37352f;
+  --fg-secondary: #787774;
+  --border-color: #e9e9e7;
+  --accent-blue: #2383e2;
+  --accent-red: #e03e3e;
+  --accent-green: #0f7b6c;
+  --accent-orange: #d9730d;
+
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+
+  /* Typography */
+  --font-sans: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
+  --font-mono: var(--font-geist-mono), monospace;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+
+  /* Radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+}
+
+[data-theme='dark'] {
+  /* Notion-like Color Palette (Dark Mode) */
+  --bg-primary: #191919;
+  --bg-secondary: #202020;
+  --bg-hover: #2c2c2c;
+  --fg-primary: #d4d4d4;
+  --fg-secondary: #9b9b9b;
+  --border-color: #2f2f2f;
+  --accent-blue: #4d96e8;
+  --accent-red: #eb5757;
+  --accent-green: #26a69a;
+  --accent-orange: #f2994a;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  height: 100%;
+}
+
+body {
+  color: var(--fg-primary);
+  background: var(--bg-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* Utility Classes */
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.gap-sm {
+  gap: var(--space-sm);
+}
+
+.gap-md {
+  gap: var(--space-md);
+}
+
+.gap-lg {
+  gap: var(--space-lg);
+}
+
+.w-full {
+  width: 100%;
+}
+
+.h-full {
+  height: 100%;
+}
+
+.text-sm {
+  font-size: 0.875rem;
+}
+
+.text-md {
+  font-size: 1rem;
+}
+
+.text-lg {
+  font-size: 1.125rem;
+}
+
+.text-xl {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.text-2xl {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.text-secondary {
+  color: var(--fg-secondary);
+}
+
+.p-sm {
+  padding: var(--space-sm);
+}
+
+.p-md {
+  padding: var(--space-md);
+}
+
+.p-lg {
+  padding: var(--space-lg);
+}
+
+.m-auto {
+  margin: auto;
+}
+
+.border {
+  border: 1px solid var(--border-color);
+}
+
+.rounded {
+  border-radius: var(--radius-md);
+}
+
+.hover-bg:hover {
+  background-color: var(--bg-hover);
+  transition: background 0.2s ease;
+}
+
+/* Layout Grid */
+.app-layout {
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  height: 100vh;
+}
+
+.main-content {
+  padding: var(--space-2xl);
+  overflow-y: auto;
+  background: var(--bg-primary);
+}
+
+/* Mobile header */
+.mobile-header {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  height: 60px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 999;
+}
+
+.hamburger-button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--fg-primary);
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ================================
+   RESPONSIVE DESIGN
+   ================================ */
+
+/* Tablet (< 1024px) */
+@media (max-width: 1024px) {
+  .app-layout {
+    grid-template-columns: 220px 1fr;
+  }
+
+  .main-content {
+    padding: var(--space-xl);
+  }
+}
+
+/* Mobile Landscape (< 768px) */
+@media (max-width: 768px) {
+  .app-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .main-content {
+    padding: var(--space-lg);
+    padding-top: calc(var(--space-lg) + 60px);
+    /* Account for mobile header */
+  }
+
+  /* Larger touch targets for mobile */
+  button,
+  a,
+  input[type="checkbox"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .mobile-header {
+    display: flex;
+  }
+
+  /* Improve readability on mobile */
+  body {
+    font-size: 16px;
+    /* Prevents zoom on iOS */
+  }
+
+  /* Stack flex items on mobile */
+  .flex-col-mobile {
+    flex-direction: column;
+  }
+}
+
+/* Small Mobile (< 480px) */
+@media (max-width: 480px) {
+  .main-content {
+    padding: var(--space-md);
+    padding-top: calc(var(--space-md) + 60px);
+  }
+
+  .text-2xl {
+    font-size: 1.375rem;
+    /* Slightly smaller on small screens */
+  }
+
+  .text-xl {
+    font-size: 1.125rem;
+  }
+
+  /* Reduce spacing on very small screens */
+  :root {
+    --space-2xl: 32px;
+    --space-xl: 24px;
+  }
+}
+
+/* Large Desktop (> 1440px) */
+@media (min-width: 1440px) {
+  /* Removed max-width on main-content to keep scrollbar at the edge */
+}
+
+/* Mobile Header (for hamburger menu) */
+@media (max-width: 768px) {
+  .mobile-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--space-md);
+    z-index: 999;
+  }
+
+  .hamburger-button {
+    width: 44px;
+    height: 44px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--fg-primary);
+  }
+}
+
+/* Overlay for mobile sidebar */
+@media (max-width: 768px) {
+  .sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 998;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+
+  .sidebar-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}

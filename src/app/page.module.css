@@ -1,0 +1,207 @@
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: var(--space-xl) var(--space-md);
+  color: var(--fg-primary);
+}
+
+.header {
+  margin-bottom: var(--space-2xl);
+}
+
+.dateNavigation {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-sm);
+}
+
+.navButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--fg-secondary);
+  padding: var(--space-xs);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.navButton:hover {
+  background-color: var(--bg-hover);
+  color: var(--fg-primary);
+}
+
+.dateTitle {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--fg-primary);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.subHeader {
+  color: var(--fg-secondary);
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-left: 48px;
+  /* Align with title text accounting for nav button */
+}
+
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.block {
+  display: flex;
+  align-items: center;
+  padding: 4px 0;
+  border-radius: 4px;
+  position: relative;
+  gap: var(--space-xs);
+}
+
+
+.block:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+[data-theme='dark'] .block:hover {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.blockControls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-right: 8px;
+  cursor: pointer;
+  color: var(--fg-secondary);
+  opacity: 0;
+  transition: opacity 0.2s;
+  user-select: none;
+}
+
+.block:hover .blockControls {
+  opacity: 1;
+}
+
+.checkbox {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--fg-secondary);
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin-top: 4px;
+  margin-right: 12px;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.checkbox.checked {
+  background-color: var(--accent-blue);
+  border-color: var(--accent-blue);
+}
+
+.checkIcon {
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+}
+
+.contentInput {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--fg-primary);
+  font-size: 1rem;
+  font-family: var(--font-sans);
+  line-height: 1.5;
+  resize: none;
+  outline: none;
+  padding: 0;
+  min-height: 24px;
+}
+
+.contentInput::placeholder {
+  color: var(--fg-secondary);
+  opacity: 0.5;
+}
+
+.completed .contentInput {
+  text-decoration: line-through;
+  color: var(--fg-secondary);
+}
+
+.addBlockArea {
+  margin-top: var(--space-md);
+  color: var(--fg-secondary);
+  cursor: text;
+  padding: var(--space-sm) 0;
+  opacity: 0.6;
+}
+
+.addBlockArea:hover {
+  opacity: 1;
+}
+
+.emptyState {
+  color: var(--fg-secondary);
+  font-style: italic;
+  padding: var(--space-md) 0;
+  cursor: pointer;
+}
+
+.sourceLabel {
+  font-size: 0.7rem;
+  font-style: italic;
+  margin-left: var(--space-sm);
+  white-space: nowrap;
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid currentColor;
+  opacity: 0.8;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .dateTitle {
+    font-size: 1.75rem;
+  }
+
+  .subHeader {
+    margin-left: 0;
+    padding-left: 40px;
+    /* Approximate alignment */
+    font-size: 1rem;
+  }
+
+  .blockControls {
+    opacity: 1;
+    /* Always show controls on mobile since no hover */
+    width: 30px;
+    /* Larger touch target */
+  }
+
+  .checkbox {
+    width: 20px;
+    height: 20px;
+    margin-right: 8px;
+  }
+
+  .contentInput {
+    font-size: 16px;
+    /* Prevent zoom on iOS */
+  }
+}
