@@ -189,6 +189,19 @@ export function useMonthlyGoals() {
     const updateGoalCompletion = async (monthKey: string, goalId: string, date: string, completed: boolean) => {
         if (!user) return;
 
+        // Store previous state for potential revert
+        const previousState = goals[monthKey]?.find(g => g.id === goalId)?.completedDays?.[date];
+
+        // Optimistic update
+        setGoals(prev => ({
+            ...prev,
+            [monthKey]: prev[monthKey]?.map(g =>
+                g.id === goalId
+                    ? { ...g, completedDays: { ...g.completedDays, [date]: completed } }
+                    : g
+            ) || []
+        }));
+
         try {
             const [year, month] = monthKey.split('-').map(Number);
 
@@ -216,18 +229,23 @@ export function useMonthlyGoals() {
                 });
 
             if (upsertError) throw upsertError;
-
-            // Update local state
+        } catch (error: any) {
+            const msg = error.message || error.details || error.hint || 'Unknown error';
+            // Revert the optimistic update
             setGoals(prev => ({
                 ...prev,
                 [monthKey]: prev[monthKey]?.map(g =>
                     g.id === goalId
-                        ? { ...g, completedDays: { ...g.completedDays, [date]: completed } }
+                        ? { ...g, completedDays: { ...g.completedDays, [date]: previousState || false } }
                         : g
                 ) || []
             }));
-        } catch (error) {
-            console.error('Error updating monthly goal completion:', error);
+
+            if (msg.includes('current date')) {
+                alert(msg);
+            } else {
+                console.error('Error updating monthly goal completion:', JSON.stringify(error, null, 2));
+            }
         }
     };
 

@@ -186,6 +186,19 @@ export function useWeeklyGoals() {
     const updateGoalCompletion = async (weekKey: string, goalId: string, date: string, completed: boolean) => {
         if (!user) return;
 
+        // Store previous state for potential revert
+        const previousState = goals[weekKey]?.find(g => g.id === goalId)?.completedDays?.[date];
+
+        // Optimistic update
+        setGoals(prev => ({
+            ...prev,
+            [weekKey]: prev[weekKey]?.map(g =>
+                g.id === goalId
+                    ? { ...g, completedDays: { ...g.completedDays, [date]: completed } }
+                    : g
+            ) || []
+        }));
+
         try {
             // Find the weekly goal
             const { data: weeklyGoal, error: findError } = await supabase
@@ -210,18 +223,23 @@ export function useWeeklyGoals() {
                 });
 
             if (upsertError) throw upsertError;
-
-            // Update local state
+        } catch (error: any) {
+            const msg = error.message || error.details || error.hint || 'Unknown error';
+            // Revert the optimistic update
             setGoals(prev => ({
                 ...prev,
                 [weekKey]: prev[weekKey]?.map(g =>
                     g.id === goalId
-                        ? { ...g, completedDays: { ...g.completedDays, [date]: completed } }
+                        ? { ...g, completedDays: { ...g.completedDays, [date]: previousState || false } }
                         : g
                 ) || []
             }));
-        } catch (error) {
-            console.error('Error updating weekly goal completion:', error);
+
+            if (msg.includes('current date')) {
+                alert(msg);
+            } else {
+                console.error('Error updating weekly goal completion:', JSON.stringify(error, null, 2));
+            }
         }
     };
 

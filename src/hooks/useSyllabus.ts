@@ -212,12 +212,77 @@ export function useSyllabus() {
         }
     };
 
+    const updateSubjectName = async (subjectId: string, newName: string) => {
+        if (!user) return;
+
+        try {
+            const { error } = await supabase
+                .from('subjects')
+                .update({ name: newName })
+                .eq('user_id', user.id)
+                .eq('subject_id', subjectId);
+
+            if (error) throw error;
+
+            setSubjects(prev =>
+                prev.map(s =>
+                    s.id === subjectId ? { ...s, name: newName } : s
+                )
+            );
+        } catch (error) {
+            console.error('Error updating subject name:', error);
+            throw error;
+        }
+    };
+
+    const updateChapterName = async (subjectId: string, chapterId: string, newName: string) => {
+        if (!user) return;
+
+        try {
+            // Find the subject's database ID
+            const { data: subject, error: subjectError } = await supabase
+                .from('subjects')
+                .select('id')
+                .eq('user_id', user.id)
+                .eq('subject_id', subjectId)
+                .single();
+
+            if (subjectError) throw subjectError;
+
+            const { error } = await supabase
+                .from('chapters')
+                .update({ name: newName })
+                .eq('subject_id', subject.id)
+                .eq('chapter_id', chapterId);
+
+            if (error) throw error;
+
+            setSubjects(prev =>
+                prev.map(s =>
+                    s.id === subjectId
+                        ? {
+                            ...s,
+                            chapters: s.chapters.map(c =>
+                                c.id === chapterId ? { ...c, name: newName } : c
+                            )
+                        }
+                        : s
+                )
+            );
+        } catch (error) {
+            console.error('Error updating chapter name:', error);
+            throw error;
+        }
+    };
+
     return {
         subjects,
         loading,
         user,
         saveSubjects,
         updateChapterCompletion,
+        updateSubjectName,
+        updateChapterName,
         refreshSyllabus: loadSyllabus
     };
 }

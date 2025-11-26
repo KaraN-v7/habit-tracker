@@ -7,7 +7,10 @@ import {
     Trash2,
     ArrowRightCircle,
     CheckCircle2,
-    Circle
+    Circle,
+    Edit2,
+    X,
+    Check
 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { useSyllabus } from '@/hooks/useSyllabus';
@@ -18,8 +21,11 @@ const COLORS = ['#10b981', '#e2e8f0']; // Completed (Green), Remaining (Gray)
 export default function SyllabusPage() {
     const [newSubjectName, setNewSubjectName] = useState('');
     const [newChapterNames, setNewChapterNames] = useState<{ [subjectId: string]: string }>({});
+    const [editingSubjectId, setEditingSubjectId] = useState<string | null>(null);
+    const [editingChapterId, setEditingChapterId] = useState<string | null>(null);
+    const [editName, setEditName] = useState('');
 
-    const { subjects, loading, saveSubjects, updateChapterCompletion, user } = useSyllabus();
+    const { subjects, loading, saveSubjects, updateChapterCompletion, updateSubjectName, updateChapterName, user } = useSyllabus();
     const { saveGoals: saveDailyGoals, addGoal, goals: dailyGoals } = useDailyGoals();
 
     const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -126,6 +132,40 @@ export default function SyllabusPage() {
         await updateChapterCompletion(subjectId, chapterId, false);
     };
 
+    const startEditingSubject = (subject: any) => {
+        setEditingSubjectId(subject.id);
+        setEditName(subject.name);
+        setEditingChapterId(null); // Close other edits
+    };
+
+    const saveSubjectName = async (subjectId: string) => {
+        if (!editName.trim()) return;
+        try {
+            await updateSubjectName(subjectId, editName);
+            setEditingSubjectId(null);
+            showToast('Subject updated successfully');
+        } catch (error) {
+            showToast('Failed to update subject', 'error');
+        }
+    };
+
+    const startEditingChapter = (chapter: any) => {
+        setEditingChapterId(chapter.id);
+        setEditName(chapter.name);
+        setEditingSubjectId(null); // Close other edits
+    };
+
+    const saveChapterName = async (subjectId: string, chapterId: string) => {
+        if (!editName.trim()) return;
+        try {
+            await updateChapterName(subjectId, chapterId, editName);
+            setEditingChapterId(null);
+            showToast('Chapter updated successfully');
+        } catch (error) {
+            showToast('Failed to update chapter', 'error');
+        }
+    };
+
     const getTotalStats = () => {
         let total = 0;
         let completed = 0;
@@ -211,6 +251,10 @@ export default function SyllabusPage() {
                         <span className={styles.statLabel}>Chapters Completed</span>
                     </div>
                     <div className={styles.statItem}>
+                        <span className={styles.statValue}>{totalStats.total - totalStats.completed}</span>
+                        <span className={styles.statLabel}>Chapters Left</span>
+                    </div>
+                    <div className={styles.statItem}>
                         <span className={styles.statValue}>{totalStats.total}</span>
                         <span className={styles.statLabel}>Total Chapters</span>
                     </div>
@@ -233,16 +277,40 @@ export default function SyllabusPage() {
                     return (
                         <div key={subject.id} className={styles.subjectCard}>
                             <div className={styles.subjectHeader}>
-                                <div>
-                                    <h2 className={styles.subjectTitle}>{subject.name}</h2>
-                                    <p style={{
-                                        fontSize: '0.75rem',
-                                        color: 'var(--text-secondary)',
-                                        margin: '0.25rem 0 0 0',
-                                        fontWeight: 500
-                                    }}>
-                                        {stats.total} {stats.total === 1 ? 'chapter' : 'chapters'}
-                                    </p>
+                                <div style={{ flex: 1 }}>
+                                    {editingSubjectId === subject.id ? (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            <input
+                                                type="text"
+                                                value={editName}
+                                                onChange={(e) => setEditName(e.target.value)}
+                                                className={styles.input}
+                                                autoFocus
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') saveSubjectName(subject.id);
+                                                    if (e.key === 'Escape') setEditingSubjectId(null);
+                                                }}
+                                            />
+                                            <button onClick={() => saveSubjectName(subject.id)} className={styles.pushButton} title="Save">
+                                                <Check size={16} />
+                                            </button>
+                                            <button onClick={() => setEditingSubjectId(null)} className={styles.pushButton} title="Cancel">
+                                                <X size={16} />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <h2 className={styles.subjectTitle}>{subject.name}</h2>
+                                            <p style={{
+                                                fontSize: '0.75rem',
+                                                color: 'var(--text-secondary)',
+                                                margin: '0.25rem 0 0 0',
+                                                fontWeight: 500
+                                            }}>
+                                                {stats.total} {stats.total === 1 ? 'chapter' : 'chapters'} • {stats.total - stats.completed} left
+                                            </p>
+                                        </>
+                                    )}
                                 </div>
                                 <div className={styles.subjectChart} style={{ position: 'relative' }}>
                                     <ResponsiveContainer width="100%" height="100%">
@@ -274,13 +342,22 @@ export default function SyllabusPage() {
                                         {stats.percentage}%
                                     </div>
                                 </div>
-                                <button
-                                    onClick={() => deleteSubject(subject.id)}
-                                    className={styles.pushButton}
-                                    title="Delete Subject"
-                                >
-                                    <Trash2 size={16} />
-                                </button>
+                                <div style={{ display: 'flex', gap: '0.25rem' }}>
+                                    <button
+                                        onClick={() => startEditingSubject(subject)}
+                                        className={styles.pushButton}
+                                        title="Edit Subject"
+                                    >
+                                        <Edit2 size={16} />
+                                    </button>
+                                    <button
+                                        onClick={() => deleteSubject(subject.id)}
+                                        className={styles.pushButton}
+                                        title="Delete Subject"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
                             </div>
 
                             <div className={styles.chapterList}>
@@ -293,22 +370,58 @@ export default function SyllabusPage() {
                                         >
                                             {chapter.completed ? <CheckCircle2 size={18} /> : <Circle size={18} />}
                                         </button>
-                                        <span className={styles.chapterName}>{chapter.name}</span>
-                                        <button
-                                            onClick={() => pushToToday(subject.id, chapter.id)}
-                                            className={styles.pushButton}
-                                            title="Push to Today's Goals"
-                                        >
-                                            <ArrowRightCircle size={18} />
-                                        </button>
-                                        <button
-                                            onClick={() => deleteChapter(subject.id, chapter.id)}
-                                            className={styles.pushButton}
-                                            style={{ opacity: 0.5 }}
-                                            title="Delete Chapter"
-                                        >
-                                            <Trash2 size={14} />
-                                        </button>
+
+                                        {editingChapterId === chapter.id ? (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
+                                                <input
+                                                    type="text"
+                                                    value={editName}
+                                                    onChange={(e) => setEditName(e.target.value)}
+                                                    className={styles.input}
+                                                    autoFocus
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') saveChapterName(subject.id, chapter.id);
+                                                        if (e.key === 'Escape') setEditingChapterId(null);
+                                                    }}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                />
+                                                <button onClick={() => saveChapterName(subject.id, chapter.id)} className={styles.pushButton} title="Save">
+                                                    <Check size={14} />
+                                                </button>
+                                                <button onClick={() => setEditingChapterId(null)} className={styles.pushButton} title="Cancel">
+                                                    <X size={14} />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <span className={styles.chapterName}>{chapter.name}</span>
+                                                <div style={{ display: 'flex', gap: '0.25rem', marginLeft: 'auto' }}>
+                                                    <button
+                                                        onClick={() => startEditingChapter(chapter)}
+                                                        className={styles.pushButton}
+                                                        title="Edit Chapter"
+                                                        style={{ opacity: 0.5 }}
+                                                    >
+                                                        <Edit2 size={14} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => pushToToday(subject.id, chapter.id)}
+                                                        className={styles.pushButton}
+                                                        title="Push to Today's Goals"
+                                                    >
+                                                        <ArrowRightCircle size={18} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => deleteChapter(subject.id, chapter.id)}
+                                                        className={styles.pushButton}
+                                                        style={{ opacity: 0.5 }}
+                                                        title="Delete Chapter"
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
                                 ))}
                             </div>

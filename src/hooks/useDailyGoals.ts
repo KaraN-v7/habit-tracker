@@ -165,6 +165,15 @@ export function useDailyGoals() {
         // Find the block to check for parentId
         const block = goals[dateKey]?.find(b => b.id === blockId);
         const parentId = block?.parentId;
+        const previousCompleted = block?.completed;
+
+        // Optimistic update
+        setGoals(prev => ({
+            ...prev,
+            [dateKey]: prev[dateKey]?.map(b =>
+                b.id === blockId ? { ...b, completed } : b
+            ) || []
+        }));
 
         try {
             const { error } = await supabase
@@ -187,16 +196,28 @@ export function useDailyGoals() {
                     console.error('Error syncing chapter completion:', chapterError);
                 }
             }
-
-            // Update local state
-            setGoals(prev => ({
-                ...prev,
-                [dateKey]: prev[dateKey]?.map(b =>
-                    b.id === blockId ? { ...b, completed } : b
-                ) || []
-            }));
-        } catch (error) {
-            console.error('Error updating goal completion:', error);
+        } catch (error: any) {
+            const msg = error.message || error.details || error.hint || 'Unknown error';
+            if (msg.includes('current date')) {
+                // Revert the optimistic update
+                setGoals(prev => ({
+                    ...prev,
+                    [dateKey]: prev[dateKey]?.map(b =>
+                        b.id === blockId ? { ...b, completed: previousCompleted || false } : b
+                    ) || []
+                }));
+                alert(msg);
+            } else {
+                console.error('Error updating goal completion:', JSON.stringify(error, null, 2));
+                console.log('Full error object:', error);
+                // Revert on any error
+                setGoals(prev => ({
+                    ...prev,
+                    [dateKey]: prev[dateKey]?.map(b =>
+                        b.id === blockId ? { ...b, completed: previousCompleted || false } : b
+                    ) || []
+                }));
+            }
         }
     };
 

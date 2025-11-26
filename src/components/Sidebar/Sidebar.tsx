@@ -14,8 +14,11 @@ import {
     Settings,
     Calendar,
     CalendarRange,
+    Trophy,
+    Star
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useLeaderboard } from '@/hooks/useLeaderboard';
 
 // Props for mobile toggle
 interface SidebarProps {
@@ -25,6 +28,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ open = false }) => {
     const pathname = usePathname();
     const { user } = useAuth();
+    const { userPoints } = useLeaderboard();
 
     const displayName =
         user?.user_metadata?.custom_full_name ||
@@ -40,6 +44,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open = false }) => {
         { name: 'Monthly Goals', href: '/monthly', icon: CalendarRange },
         { name: 'Syllabus', href: '/syllabus', icon: BookOpen },
         { name: 'Analytics', href: '/analytics', icon: BarChart2 },
+        { name: 'Leaderboard', href: '/leaderboard', icon: Trophy },
     ];
 
     return (
@@ -66,7 +71,21 @@ const Sidebar: React.FC<SidebarProps> = ({ open = false }) => {
             </nav>
 
             <div className={styles.sidebarFooter}>
-                {/* Badges could be displayed here */}
+                <div style={{
+                    padding: '0.5rem',
+                    marginBottom: '0.5rem',
+                    background: 'rgba(255, 215, 0, 0.1)',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    color: '#f59e0b',
+                    fontWeight: 600,
+                    fontSize: '0.875rem'
+                }}>
+                    <Star size={16} fill="#f59e0b" />
+                    <span>{userPoints} Points</span>
+                </div>
                 <Link href="/profile" className={styles.userProfile} style={{ textDecoration: 'none', color: 'inherit' }}>
                     {avatarUrl ? (
                         <img
