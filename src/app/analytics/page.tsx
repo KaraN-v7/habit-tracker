@@ -76,9 +76,9 @@ export default function AnalyticsPage() {
         const text = goal.content || goal.title || '';
         const studyKeywords = [
             'study', 'revision', 'practice', 'learn', 'read', 'test', 'exam', 'homework', 'assignment', 'chapter',
-            'math', 'science', 'english', 'physics', 'chemistry', 'biology',
-            'sst', 'social', 'history', 'geography', 'civics', 'economics',
-            'hindi', 'sanskrit', 'computer', 'coding', 'programming'
+            'math', 'maths', 'science', 'sci', 'english', 'eng', 'physics', 'phy', 'chemistry', 'chem', 'biology', 'bio',
+            'sst', 'social', 'history', 'hist', 'geography', 'geo', 'civics', 'economics', 'eco',
+            'hindi', 'sanskrit', 'sans', 'computer', 'comp', 'coding', 'programming', 'it', 'cs'
         ];
         const lowerText = text.toLowerCase();
         return studyKeywords.some(keyword => lowerText.includes(keyword));

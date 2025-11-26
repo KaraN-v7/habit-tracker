@@ -361,7 +361,7 @@ export default function SyllabusPage() {
                             </div>
 
                             <div className={styles.chapterList}>
-                                {subject.chapters.map(chapter => (
+                                {[...subject.chapters].sort((a, b) => Number(a.completed) - Number(b.completed)).map(chapter => (
                                     <div key={chapter.id} className={`${styles.chapterItem} ${chapter.completed ? styles.completed : ''}`}>
                                         <button
                                             className={styles.statusIcon}

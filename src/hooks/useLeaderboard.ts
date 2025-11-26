@@ -6,10 +6,21 @@ export interface LeaderboardEntry {
     display_name: string;
     avatar_url: string;
     total_points: number;
-    daily_points: number;
-    weekly_points: number;
-    monthly_points: number;
+    rank: number;
 }
+
+export interface UserDetails {
+    goals_completed: number;
+    chapters_completed: number;
+    subjects_completed: number;
+    study_hours: number;
+    total_points: number;
+    syllabus_total: number;
+    syllabus_completed: number;
+    syllabus_percentage: number;
+}
+
+export type Period = 'daily' | 'weekly' | 'monthly';
 
 export function useLeaderboard() {
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -17,20 +28,62 @@ export function useLeaderboard() {
     const [loading, setLoading] = useState(true);
     const [currentUser, setCurrentUser] = useState<any>(null);
 
+    // State for navigation
+    const [currentDate, setCurrentDate] = useState(new Date());
+    const [period, setPeriod] = useState<Period>('daily');
+
     useEffect(() => {
         supabase.auth.getUser().then(({ data: { user } }) => {
             setCurrentUser(user);
         });
     }, []);
 
+    const getTimeRange = (date: Date, type: Period) => {
+        const start = new Date(date);
+        const end = new Date(date);
+
+        if (type === 'daily') {
+            start.setHours(0, 0, 0, 0);
+            end.setHours(23, 59, 59, 999);
+        } else if (type === 'weekly') {
+            const day = start.getDay();
+            const diff = start.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
+            start.setDate(diff);
+            start.setHours(0, 0, 0, 0);
+
+            end.setDate(start.getDate() + 6);
+            end.setHours(23, 59, 59, 999);
+        } else if (type === 'monthly') {
+            start.setDate(1);
+            start.setHours(0, 0, 0, 0);
+
+            end.setMonth(start.getMonth() + 1);
+            end.setDate(0); // Last day of previous month (which is current month)
+            end.setHours(23, 59, 59, 999);
+        }
+
+        return { start, end };
+    };
+
     const fetchLeaderboard = async () => {
+        setLoading(true);
         try {
+            const { start, end } = getTimeRange(currentDate, period);
+
             const { data, error } = await supabase
-                .from('leaderboard_stats')
-                .select('*');
+                .rpc('get_period_leaderboard', {
+                    start_time: start.toISOString(),
+                    end_time: end.toISOString()
+                });
 
             if (error) throw error;
             setLeaderboard(data || []);
+
+            // Update current user points from the list if available
+            if (currentUser) {
+                const myEntry = data?.find((e: any) => e.user_id === currentUser.id);
+                setUserPoints(myEntry ? myEntry.total_points : 0);
+            }
         } catch (error) {
             console.error('Error fetching leaderboard:', error);
         } finally {
@@ -38,28 +91,48 @@ export function useLeaderboard() {
         }
     };
 
-    const fetchUserPoints = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+    const fetchUserDetails = async (userId: string): Promise<UserDetails | null> => {
+        try {
+            const { start, end } = getTimeRange(currentDate, period);
 
-        const { data, error } = await supabase
-            .from('leaderboard_stats')
-            .select('total_points')
-            .eq('user_id', user.id)
-            .single();
+            // 1. Get Period Stats
+            const { data: periodStats, error: statsError } = await supabase
+                .rpc('get_user_period_details', {
+                    target_user_id: userId,
+                    start_time: start.toISOString(),
+                    end_time: end.toISOString()
+                })
+                .single();
 
-        if (data) {
-            setUserPoints(data.total_points);
+            if (statsError) throw statsError;
+
+            // 2. Get Syllabus Stats (All Time)
+            const { data: syllabusStats, error: syllabusError } = await supabase
+                .rpc('get_user_syllabus_progress', {
+                    target_user_id: userId
+                })
+                .single();
+
+            if (syllabusError) throw syllabusError;
+
+            return {
+                ...(periodStats as any),
+                syllabus_total: (syllabusStats as any).total_chapters,
+                syllabus_completed: (syllabusStats as any).completed_chapters,
+                syllabus_percentage: (syllabusStats as any).percentage
+            };
+        } catch (error) {
+            console.error('Error fetching user details:', error);
+            return null;
         }
     };
 
     useEffect(() => {
         fetchLeaderboard();
-        fetchUserPoints();
 
-        // Subscribe to profile changes to refresh leaderboard in real-time
+        // Subscribe to profile changes AND points_history changes to refresh leaderboard in real-time
         const channel = supabase
-            .channel('profile_changes')
+            .channel('leaderboard_updates')
             .on(
                 'postgres_changes',
                 {
@@ -71,12 +144,34 @@ export function useLeaderboard() {
                     fetchLeaderboard();
                 }
             )
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'points_history'
+                },
+                () => {
+                    fetchLeaderboard();
+                }
+            )
             .subscribe();
 
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [currentUser]);
+    }, [currentUser, currentDate, period]);
 
-    return { leaderboard, userPoints, loading, refresh: fetchLeaderboard, currentUser };
+    return {
+        leaderboard,
+        userPoints,
+        loading,
+        refresh: fetchLeaderboard,
+        currentUser,
+        currentDate,
+        setCurrentDate,
+        period,
+        setPeriod,
+        fetchUserDetails
+    };
 }
