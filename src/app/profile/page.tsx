@@ -35,6 +35,10 @@ export default function ProfilePage() {
         setMessage(null);
 
         try {
+            console.log('Updating profile for user:', user?.id);
+            console.log('New display name:', fullName);
+
+            // 1. Update auth.users metadata
             const { error } = await supabase.auth.updateUser({
                 data: {
                     full_name: fullName,
@@ -42,11 +46,39 @@ export default function ProfilePage() {
                 }
             });
 
-            if (error) throw error;
-            setMessage({ type: 'success', text: 'Profile updated successfully!' });
-        } catch (error) {
+            if (error) {
+                console.error('Auth update error:', error);
+                throw error;
+            }
+            console.log('✅ Auth metadata updated');
+
+            // 2. Update profiles table for leaderboard
+            if (user) {
+                console.log('Updating profiles table...');
+                const { data, error: profileError } = await supabase
+                    .from('profiles')
+                    .upsert({
+                        id: user.id,
+                        display_name: fullName,
+                        avatar_url: avatarUrl,
+                        updated_at: new Date().toISOString()
+                    }, {
+                        onConflict: 'id'
+                    })
+                    .select();
+
+                if (profileError) {
+                    console.error('❌ Profile table update error:', profileError);
+                    setMessage({ type: 'error', text: `Profile updated in auth, but failed to update leaderboard: ${profileError.message}` });
+                    return;
+                }
+                console.log('✅ Profile table updated:', data);
+            }
+
+            setMessage({ type: 'success', text: 'Profile and leaderboard updated successfully!' });
+        } catch (error: any) {
             console.error('Error updating profile:', error);
-            setMessage({ type: 'error', text: 'Failed to update profile.' });
+            setMessage({ type: 'error', text: `Failed to update profile: ${error.message}` });
         } finally {
             setLoading(false);
         }
@@ -102,6 +134,25 @@ export default function ProfilePage() {
             });
 
             if (updateError) throw updateError;
+
+            // 4. Update profiles table for leaderboard
+            if (user) {
+                const { error: profileError } = await supabase
+                    .from('profiles')
+                    .upsert({
+                        id: user.id,
+                        display_name: fullName,
+                        avatar_url: publicUrl,
+                        updated_at: new Date().toISOString()
+                    }, {
+                        onConflict: 'id'
+                    });
+
+                if (profileError) {
+                    console.error('Error updating profile table:', profileError);
+                    // Don't throw - avatar update succeeded
+                }
+            }
 
             setAvatarUrl(publicUrl);
             setMessage({ type: 'success', text: 'Avatar updated successfully!' });

@@ -56,6 +56,26 @@ export function useLeaderboard() {
     useEffect(() => {
         fetchLeaderboard();
         fetchUserPoints();
+
+        // Subscribe to profile changes to refresh leaderboard in real-time
+        const channel = supabase
+            .channel('profile_changes')
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'profiles'
+                },
+                () => {
+                    fetchLeaderboard();
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, [currentUser]);
 
     return { leaderboard, userPoints, loading, refresh: fetchLeaderboard, currentUser };
