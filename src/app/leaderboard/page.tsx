@@ -2,11 +2,12 @@
 import React, { useState } from 'react';
 import styles from './page.module.css';
 import { useLeaderboard } from '@/hooks/useLeaderboard';
-import { Trophy, Medal, Award } from 'lucide-react';
+import { Trophy, Medal, Award, HelpCircle, X } from 'lucide-react';
 
 export default function LeaderboardPage() {
     const { leaderboard, loading, currentUser } = useLeaderboard();
     const [period, setPeriod] = useState<'daily' | 'weekly' | 'monthly'>('daily');
+    const [showHowItWorks, setShowHowItWorks] = useState(false);
 
     const getPoints = (entry: any) => {
         switch (period) {
@@ -35,8 +36,17 @@ export default function LeaderboardPage() {
     return (
         <div className={styles.container}>
             <header className={styles.header}>
-                <h1 className={styles.title}>Leaderboard</h1>
-                <p className={styles.subtitle}>Compete with others and track your progress</p>
+                <div>
+                    <h1 className={styles.title}>Leaderboard</h1>
+                    <p className={styles.subtitle}>Compete with others and track your progress</p>
+                </div>
+                <button
+                    className={styles.howItWorksBtn}
+                    onClick={() => setShowHowItWorks(true)}
+                >
+                    <HelpCircle size={18} />
+                    How it Works
+                </button>
             </header>
 
             <div className={styles.tabs}>
@@ -65,9 +75,6 @@ export default function LeaderboardPage() {
                     const rank = index + 1;
                     const isCurrentUser = currentUser?.id === entry.user_id;
                     const points = getPoints(entry);
-
-                    // Skip users with 0 points if we want to be clean, but maybe show them?
-                    // Let's show everyone for now.
 
                     return (
                         <div key={entry.user_id} className={`${styles.card} ${isCurrentUser ? styles.currentUser : ''}`}>
@@ -99,6 +106,65 @@ export default function LeaderboardPage() {
                     </div>
                 )}
             </div>
+
+            {/* How it Works Modal */}
+            {showHowItWorks && (
+                <div className={styles.modalOverlay} onClick={() => setShowHowItWorks(false)}>
+                    <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+                        <button
+                            className={styles.closeBtn}
+                            onClick={() => setShowHowItWorks(false)}
+                        >
+                            <X size={24} />
+                        </button>
+
+                        <h2 className={styles.modalTitle}>How Points Work</h2>
+
+                        <div className={styles.pointsSection}>
+                            <h3>📝 Daily Goals</h3>
+                            <div className={styles.pointItem}>
+                                <span>Complete a task</span>
+                                <strong>+2 points</strong>
+                            </div>
+                            <div className={styles.pointItem}>
+                                <span>Study hours (per hour)</span>
+                                <strong>+10 points</strong>
+                            </div>
+                            <div className={styles.example}>
+                                Example: "Study Math 2 hours" = +2 (task) + +20 (hours) = <strong>22 points</strong>
+                            </div>
+                        </div>
+
+                        <div className={styles.pointsSection}>
+                            <h3>📚 Syllabus</h3>
+                            <div className={styles.pointItem}>
+                                <span>Complete a chapter</span>
+                                <strong>+10 points</strong>
+                            </div>
+                            <div className={styles.pointItem}>
+                                <span>Complete all chapters in a subject</span>
+                                <strong>+20 points bonus</strong>
+                            </div>
+                            <div className={styles.pointItem}>
+                                <span className={styles.highlight}>Complete ENTIRE syllabus</span>
+                                <strong className={styles.highlight}>+100 points bonus!</strong>
+                            </div>
+                        </div>
+
+                        <div className={styles.pointsSection}>
+                            <h3>📅 Weekly & Monthly Goals</h3>
+                            <div className={styles.pointItem}>
+                                <span>Same as daily goals</span>
+                                <strong>+2 per task, +10 per hour</strong>
+                            </div>
+                        </div>
+
+                        <div className={styles.noteSection}>
+                            <strong>Note:</strong> You can only check/uncheck tasks for the current date to prevent cheating. All syllabus progress counts regardless of date!
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

@@ -60,7 +60,7 @@ CREATE POLICY "Points history is viewable by everyone"
 -- This prevents cheating. All modifications happen via the SECURITY DEFINER triggers below.
 
 
--- 3. TRIGGER FUNCTION: Handle Daily Goal Points (+2) and Study Hours (+5/hr)
+-- 3. TRIGGER FUNCTION: Handle Daily Goal Points (+2) and Study Hours (+10/hr)
 -- SECURITY DEFINER allows this function to bypass RLS on points_history
 CREATE OR REPLACE FUNCTION handle_daily_goal_points() RETURNS TRIGGER 
 SECURITY DEFINER 
@@ -85,10 +85,10 @@ BEGIN
         INSERT INTO points_history (user_id, points, source_type, source_id)
         VALUES (NEW.user_id, 2, 'daily_goal', NEW.id::text);
         
-        -- Add Study Points (+5 per hour)
+        -- Add Study Points (+10 per hour)
         IF study_hours > 0 THEN
              INSERT INTO points_history (user_id, points, source_type, source_id)
-             VALUES (NEW.user_id, floor(study_hours * 5)::INTEGER, 'study_hour', NEW.id::text || '_study');
+             VALUES (NEW.user_id, floor(study_hours * 10)::INTEGER, 'study_hour', NEW.id::text || '_study');
         END IF;
         
     -- IF UN-COMPLETED
@@ -111,7 +111,7 @@ FOR EACH ROW
 EXECUTE FUNCTION handle_daily_goal_points();
 
 
--- 4. TRIGGER FUNCTION: Handle Chapter (+10) and Subject (+20) Points
+-- 4. TRIGGER FUNCTION: Handle Chapter (+10), Subject (+20), and Full Syllabus (+100) Points
 -- SECURITY DEFINER allows this function to bypass RLS on points_history
 CREATE OR REPLACE FUNCTION handle_syllabus_points() RETURNS TRIGGER 
 SECURITY DEFINER 
@@ -121,12 +121,17 @@ DECLARE
     subject_completed BOOLEAN;
     total_chapters INTEGER;
     completed_chapters INTEGER;
+    current_user_id UUID;
+    all_subjects_complete BOOLEAN;
 BEGIN
+    -- Get the user_id for this chapter
+    SELECT user_id INTO current_user_id FROM subjects WHERE id = NEW.subject_id;
+    
     -- IF CHAPTER COMPLETED
     IF NEW.completed = true AND (OLD.completed = false OR OLD.completed IS NULL) THEN
         -- Add Chapter Points (+10)
         INSERT INTO points_history (user_id, points, source_type, source_id)
-        VALUES ((SELECT user_id FROM subjects WHERE id = NEW.subject_id), 10, 'chapter', NEW.id::text);
+        VALUES (current_user_id, 10, 'chapter', NEW.id::text);
         
         -- CHECK FOR SUBJECT COMPLETION
         SELECT count(*), count(*) FILTER (WHERE completed = true)
@@ -134,10 +139,35 @@ BEGIN
         FROM chapters
         WHERE subject_id = NEW.subject_id;
         
-        -- If all chapters are now completed (including this one)
+        -- If all chapters in this subject are now completed
         IF total_chapters > 0 AND total_chapters = completed_chapters THEN
              INSERT INTO points_history (user_id, points, source_type, source_id)
-             VALUES ((SELECT user_id FROM subjects WHERE id = NEW.subject_id), 20, 'subject', NEW.subject_id::text);
+             VALUES (current_user_id, 20, 'subject', NEW.subject_id::text);
+             
+             -- CHECK FOR FULL SYLLABUS COMPLETION (all subjects complete)
+             SELECT NOT EXISTS (
+                 SELECT 1 
+                 FROM subjects s
+                 WHERE s.user_id = current_user_id
+                 AND EXISTS (
+                     SELECT 1 FROM chapters c 
+                     WHERE c.subject_id = s.id 
+                     AND c.completed = false
+                 )
+             ) INTO all_subjects_complete;
+             
+             -- If ALL subjects are now complete, award FULL SYLLABUS BONUS (+100)
+             IF all_subjects_complete THEN
+                 -- Check if bonus hasn't been awarded yet
+                 IF NOT EXISTS (
+                     SELECT 1 FROM points_history 
+                     WHERE user_id = current_user_id 
+                     AND source_type = 'full_syllabus'
+                 ) THEN
+                     INSERT INTO points_history (user_id, points, source_type, source_id)
+                     VALUES (current_user_id, 100, 'full_syllabus', 'complete');
+                 END IF;
+             END IF;
         END IF;
 
     -- IF CHAPTER UN-COMPLETED
@@ -147,6 +177,9 @@ BEGIN
         
         -- Remove Subject Points (if it was completed)
         DELETE FROM points_history WHERE source_id = NEW.subject_id::text AND source_type = 'subject';
+        
+        -- Remove Full Syllabus Bonus (if it was earned)
+        DELETE FROM points_history WHERE user_id = current_user_id AND source_type = 'full_syllabus';
     END IF;
     
     RETURN NEW;
