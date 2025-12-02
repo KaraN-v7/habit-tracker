@@ -1,0 +1,81 @@
+.skeleton {
+    background: linear-gradient(90deg,
+            var(--bg-hover) 0%,
+            var(--bg-secondary) 50%,
+            var(--bg-hover) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 4px;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+.skeletonBlock {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 4px 0;
+}
+
+.skeletonList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.skeletonHeader {
+    margin-bottom: 32px;
+}
+
+.skeletonDateNav {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 8px;
+}
+
+.skeletonSubHeader {
+    margin-left: 56px;
+}
+
+.skeletonCard {
+    background: var(--bg-secondary);
+    padding: 24px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.skeletonChartCard {
+    background: var(--bg-secondary);
+    padding: 24px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.skeletonChart {
+    margin-top: 8px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .skeletonDateNav {
+        gap: 8px;
+    }
+
+    .skeletonSubHeader {
+        margin-left: 0;
+    }
+}

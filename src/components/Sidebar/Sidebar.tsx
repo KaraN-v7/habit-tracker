@@ -84,7 +84,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open = false }) => {
                     fontSize: '0.875rem'
                 }}>
                     <Star size={16} fill="#f59e0b" />
-                    <span>{userPoints} Points</span>
+                    <span>{userPoints || 0} Points</span>
                 </div>
                 <Link href="/profile" className={styles.userProfile} style={{ textDecoration: 'none', color: 'inherit' }}>
                     {avatarUrl ? (

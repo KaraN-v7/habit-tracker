@@ -13,7 +13,7 @@ export interface WeeklyGoalsData {
 
 export function useWeeklyGoals() {
     const [goals, setGoals] = useState<WeeklyGoalsData>({});
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true); // Start true for instant skeleton render
     const [user, setUser] = useState<any>(null);
 
     // Get current user

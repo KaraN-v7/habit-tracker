@@ -19,7 +19,7 @@ export interface DailyGoals {
 
 export function useDailyGoals() {
     const [goals, setGoals] = useState<DailyGoals>({});
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true); // Start true, then immediately render skeleton
     const [user, setUser] = useState<any>(null);
 
     // Get current user

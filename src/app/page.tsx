@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useDailyGoals, Block, BlockType } from '@/hooks/useDailyGoals';
 import { useWeeklyGoals } from '@/hooks/useWeeklyGoals';
 import { useMonthlyGoals } from '@/hooks/useMonthlyGoals';
+import { SkeletonHeader, SkeletonGoalsList } from '@/components/Skeleton/Skeleton';
 export default function Home() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [inheritedGoals, setInheritedGoals] = useState<Block[]>([]);
@@ -229,13 +230,12 @@ export default function Home() {
       currentDate.getFullYear() === today.getFullYear();
   };
 
-  // Show loading state
+  // Show skeleton loading state - renders instantly for better perceived performance
   if (dailyLoading || weeklyLoading || monthlyLoading) {
     return (
       <div className={styles.container}>
-        <div style={{ textAlign: 'center', padding: '2rem' }}>
-          Loading...
-        </div>
+        <SkeletonHeader />
+        <SkeletonGoalsList count={6} />
       </div>
     );
   }

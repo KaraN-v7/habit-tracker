@@ -19,7 +19,7 @@ export default function AppContent({ children }: { children: React.ReactNode }) 
                 console.warn('Authentication timeout - rendering app anyway');
                 setAuthTimeout(true);
             }
-        }, 5000); // 5 second timeout
+        }, 2000); // Reduced to 2 seconds for faster loading
 
         return () => clearTimeout(timer);
     }, [loading]);
@@ -42,23 +42,9 @@ export default function AppContent({ children }: { children: React.ReactNode }) 
         }
     }, [user, loading, authTimeout, pathname, router]);
 
-    // If loading and timeout hasn't occurred, show loading spinner
+    // If loading and timeout hasn't occurred, render nothing (fast initial paint)
     if (loading && !authTimeout) {
-        return (
-            <div style={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                height: '100vh',
-                flexDirection: 'column',
-                gap: '1rem'
-            }}>
-                <div>Loading...</div>
-                <div style={{ fontSize: '0.875rem', color: '#666' }}>
-                    Checking authentication...
-                </div>
-            </div>
-        );
+        return null; // Render nothing instead of loading spinner for faster perceived load
     }
 
     // If on login or signup page, just render children (public pages)
