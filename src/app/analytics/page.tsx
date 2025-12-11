@@ -588,7 +588,7 @@ export default function AnalyticsPage() {
                                         cy="50%"
                                         labelLine={false}
                                         label={({ name, value }) => `${name}: ${value}`}
-                                        outerRadius={80}
+                                        outerRadius={55}
                                         fill="#8884d8"
                                         dataKey="value"
                                     >
@@ -633,7 +633,7 @@ export default function AnalyticsPage() {
                                         cy="50%"
                                         labelLine={false}
                                         label={({ name, value }) => `${name}: ${value.toFixed(1)}h`}
-                                        outerRadius={80}
+                                        outerRadius={55}
                                         fill="#8884d8"
                                         dataKey="value"
                                     >
@@ -678,7 +678,7 @@ export default function AnalyticsPage() {
                                         cy="50%"
                                         labelLine={false}
                                         label={({ name, value }) => value > 0 ? `${name}: ${value.toFixed(1)}h` : ''}
-                                        outerRadius={80}
+                                        outerRadius={55}
                                         fill="#8884d8"
                                         dataKey="value"
                                     >
@@ -730,7 +730,7 @@ export default function AnalyticsPage() {
                                         cy="50%"
                                         labelLine={false}
                                         label={({ name, value }) => value > 0 ? `${name}: ${value}` : ''}
-                                        outerRadius={80}
+                                        outerRadius={55}
                                         fill="#8884d8"
                                         dataKey="value"
                                     >
@@ -769,6 +769,6 @@ export default function AnalyticsPage() {
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

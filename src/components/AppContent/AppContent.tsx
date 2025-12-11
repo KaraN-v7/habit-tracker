@@ -92,7 +92,7 @@ export default function AppContent({ children }: { children: React.ReactNode }) 
             <div className="app-layout">
                 <Sidebar open={sidebarOpen} />
                 <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', width: '100%' }}>
-                    <main className="main-content" style={{ flex: 1, overflowY: 'auto' }}>
+                    <main className="main-content" style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
                         {children}
                     </main>
                 </div>

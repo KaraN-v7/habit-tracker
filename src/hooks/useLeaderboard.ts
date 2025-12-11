@@ -130,6 +130,16 @@ export function useLeaderboard() {
     useEffect(() => {
         fetchLeaderboard();
 
+        // Debounce timer for real-time updates
+        let debounceTimer: NodeJS.Timeout | null = null;
+
+        const debouncedRefresh = () => {
+            if (debounceTimer) clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                fetchLeaderboard();
+            }, 1000); // Wait 1 second before refreshing
+        };
+
         // Subscribe to profile changes AND points_history changes to refresh leaderboard in real-time
         const channel = supabase
             .channel('leaderboard_updates')
@@ -140,9 +150,7 @@ export function useLeaderboard() {
                     schema: 'public',
                     table: 'profiles'
                 },
-                () => {
-                    fetchLeaderboard();
-                }
+                debouncedRefresh
             )
             .on(
                 'postgres_changes',
@@ -151,13 +159,12 @@ export function useLeaderboard() {
                     schema: 'public',
                     table: 'points_history'
                 },
-                () => {
-                    fetchLeaderboard();
-                }
+                debouncedRefresh
             )
             .subscribe();
 
         return () => {
+            if (debounceTimer) clearTimeout(debounceTimer);
             supabase.removeChannel(channel);
         };
     }, [currentUser, currentDate, period]);

@@ -16,6 +16,7 @@
     font-weight: 700;
     margin-bottom: 0.5rem;
     background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
@@ -197,7 +198,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.4);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -207,7 +208,9 @@
 }
 
 .modal {
-    background: var(--bg-card);
+    background: rgba(var(--modal-bg-rgb, 255, 255, 255), 0.35);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-radius: 16px;
     padding: 2rem;
     max-width: 500px;
@@ -215,8 +218,13 @@
     max-height: 85vh;
     overflow-y: auto;
     position: relative;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    border: 1px solid var(--border-color);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(var(--border-rgb, 0, 0, 0), 0.2);
+}
+
+[data-theme='dark'] .modal {
+    background: rgba(30, 30, 30, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 /* Custom Scrollbar for Modal */
@@ -276,11 +284,15 @@
     font-size: 1.5rem;
     font-weight: 700;
     margin-bottom: 0.25rem;
+    color: var(--fg-primary);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .modalSubtitle {
-    color: var(--text-secondary);
+    color: var(--fg-secondary);
     font-size: 0.9rem;
+    font-weight: 500;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
 }
 
 .statsGrid {
@@ -337,6 +349,8 @@
     font-size: 1.1rem;
     font-weight: 600;
     margin-bottom: 0.75rem;
+    color: var(--fg-primary);
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
 }
 
 .pointItem {
@@ -352,7 +366,9 @@
 }
 
 .pointItem span {
-    color: var(--text-secondary);
+    color: var(--fg-secondary);
+    font-weight: 500;
+    text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5);
 }
 
 .pointItem strong {
@@ -376,14 +392,43 @@
 }
 
 .noteSection {
-    background: rgba(59, 130, 246, 0.1);
+    background: rgba(59, 130, 246, 0.15);
     border-left: 3px solid #3b82f6;
     padding: 1rem;
     border-radius: 4px;
     font-size: 0.9rem;
-    color: var(--text-secondary);
+    color: var(--fg-primary);
+    font-weight: 500;
 }
 
 .noteSection strong {
     color: #3b82f6;
+    font-weight: 700;
+}
+
+[data-theme='dark'] .noteSection {
+    background: rgba(59, 130, 246, 0.2);
+    color: #e0e0e0;
+}
+
+[data-theme='dark'] .noteSection strong {
+    color: #60a5fa;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 1rem;
+    }
+
+    .dateNav {
+        width: 100%;
+        justify-content: space-between;
+        padding: 0.5rem 1rem;
+    }
+
+    .currentDate {
+        min-width: 0;
+        flex: 1;
+        font-size: 0.9rem;
+    }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import ThemeToggle from '../ThemeToggle/ThemeToggle';
@@ -25,27 +25,34 @@ interface SidebarProps {
     open?: boolean;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ open = false }) => {
+const Sidebar: React.FC<SidebarProps> = React.memo(({ open = false }) => {
     const pathname = usePathname();
     const { user } = useAuth();
     const { userPoints } = useLeaderboard();
 
-    const displayName =
+    const displayName = useMemo(() =>
         user?.user_metadata?.custom_full_name ||
         user?.user_metadata?.full_name ||
         user?.email?.split('@')[0] ||
-        'User';
-    const avatarUrl = user?.user_metadata?.custom_avatar_url || user?.user_metadata?.avatar_url;
-    const initial = displayName.charAt(0).toUpperCase();
+        'User',
+        [user]);
 
-    const navItems = [
+    const avatarUrl = useMemo(() =>
+        user?.user_metadata?.custom_avatar_url || user?.user_metadata?.avatar_url,
+        [user]);
+
+    const initial = useMemo(() =>
+        displayName.charAt(0).toUpperCase(),
+        [displayName]);
+
+    const navItems = useMemo(() => [
         { name: 'Daily Goal', href: '/', icon: Home },
         { name: 'Weekly Goals', href: '/weekly', icon: Calendar },
         { name: 'Monthly Goals', href: '/monthly', icon: CalendarRange },
         { name: 'Syllabus', href: '/syllabus', icon: BookOpen },
         { name: 'Analytics', href: '/analytics', icon: BarChart2 },
         { name: 'Leaderboard', href: '/leaderboard', icon: Trophy },
-    ];
+    ], []);
 
     return (
         <aside className={`${styles.sidebar} ${open ? styles.open : ''}`}>
@@ -105,6 +112,8 @@ const Sidebar: React.FC<SidebarProps> = ({ open = false }) => {
             </div>
         </aside>
     );
-};
+});
+
+Sidebar.displayName = 'Sidebar';
 
 export default Sidebar;

@@ -12,6 +12,13 @@
   --accent-green: #0f7b6c;
   --accent-orange: #d9730d;
 
+  /* RGB values for transparency effects */
+  --modal-bg-rgb: 255, 255, 255;
+  --border-rgb: 0, 0, 0;
+  --text-primary: #37352f;
+  --text-secondary: #787774;
+  --bg-card: rgba(255, 255, 255, 0.7);
+
   /* Spacing */
   --space-xs: 4px;
   --space-sm: 8px;
@@ -46,6 +53,13 @@
   --accent-red: #eb5757;
   --accent-green: #26a69a;
   --accent-orange: #f2994a;
+
+  /* RGB values for transparency effects (dark mode) */
+  --modal-bg-rgb: 30, 30, 30;
+  --border-rgb: 255, 255, 255;
+  --text-primary: #e0e0e0;
+  --text-secondary: #a0a0a0;
+  --bg-card: rgba(30, 30, 30, 0.7);
 }
 
 * {
@@ -182,6 +196,7 @@ a {
 .main-content {
   padding: var(--space-2xl);
   overflow-y: auto;
+  overflow-x: hidden;
   background: var(--bg-primary);
 }
 
@@ -267,8 +282,8 @@ a {
 /* Small Mobile (< 480px) */
 @media (max-width: 480px) {
   .main-content {
-    padding: var(--space-md);
-    padding-top: calc(var(--space-md) + 60px);
+    padding: var(--space-sm);
+    padding-top: calc(var(--space-sm) + 60px);
   }
 
   .text-2xl {
