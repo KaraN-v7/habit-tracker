@@ -16,7 +16,8 @@ export default function LeaderboardPage() {
         period,
         setPeriod,
         fetchUserDetails,
-        resetProgress
+        resetProgress,
+        refresh
     } = useLeaderboard();
 
     const { isAdmin, addAdmin, resetAllPoints } = useAdmin();
@@ -108,6 +109,7 @@ export default function LeaderboardPage() {
             await addAdmin(newAdminId);
             alert('Admin added successfully!');
             setNewAdminId('');
+            refresh();
         } catch (error) {
             console.error(error);
             alert('Failed to add admin.');
@@ -117,6 +119,7 @@ export default function LeaderboardPage() {
     const handleResetAll = async () => {
         if (window.confirm('WARNING: This will reset ALL points for EVERYONE. This action cannot be undone. Are you sure?')) {
             await resetAllPoints();
+            refresh();
         }
     };
 
