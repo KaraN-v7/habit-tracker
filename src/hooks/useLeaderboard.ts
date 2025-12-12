@@ -170,6 +170,17 @@ export function useLeaderboard() {
         };
     }, [currentUser, currentDate, period]);
 
+    const resetProgress = async (resetPeriod: 'today' | 'week' | 'month') => {
+        try {
+            const { error } = await supabase.rpc('reset_my_progress', { period: resetPeriod });
+            if (error) throw error;
+            fetchLeaderboard(); // Refresh immediately
+        } catch (error) {
+            console.error('Error resetting progress:', error);
+            alert('Failed to reset progress.');
+        }
+    };
+
     return {
         leaderboard,
         userPoints,
@@ -180,6 +191,7 @@ export function useLeaderboard() {
         setCurrentDate,
         period,
         setPeriod,
-        fetchUserDetails
+        fetchUserDetails,
+        resetProgress
     };
 }
