@@ -107,10 +107,6 @@ export function useDailyGoals() {
             if (context?.previousGoals) {
                 queryClient.setQueryData(['dailyGoals', user?.id], context.previousGoals);
             }
-        },
-        onSettled: () => {
-            // Invalidate to ensure consistency
-            queryClient.invalidateQueries({ queryKey: ['dailyGoals', user?.id] });
         }
     });
 
@@ -161,9 +157,6 @@ export function useDailyGoals() {
             if (context?.previousGoals) {
                 queryClient.setQueryData(['dailyGoals', user?.id], context.previousGoals);
             }
-        },
-        onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: ['dailyGoals', user?.id] });
         }
     });
 
@@ -201,9 +194,6 @@ export function useDailyGoals() {
             if (context?.previousGoals) {
                 queryClient.setQueryData(['dailyGoals', user?.id], context.previousGoals);
             }
-        },
-        onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: ['dailyGoals', user?.id] });
         }
     });
 
@@ -243,9 +233,6 @@ export function useDailyGoals() {
             if (context?.previousGoals) {
                 queryClient.setQueryData(['dailyGoals', user?.id], context.previousGoals);
             }
-        },
-        onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: ['dailyGoals', user?.id] });
         }
     });
 

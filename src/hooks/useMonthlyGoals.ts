@@ -120,10 +120,6 @@ export function useMonthlyGoals() {
             if (context?.previousGoals) {
                 queryClient.setQueryData(['monthlyGoals', user?.id], context.previousGoals);
             }
-        },
-        onSettled: () => {
-            // Invalidate to ensure consistency, but allow it to happen in background
-            queryClient.invalidateQueries({ queryKey: ['monthlyGoals', user?.id] });
         }
     });
 
@@ -174,9 +170,6 @@ export function useMonthlyGoals() {
             if (context?.previousGoals) {
                 queryClient.setQueryData(['monthlyGoals', user?.id], context.previousGoals);
             }
-        },
-        onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: ['monthlyGoals', user?.id] });
         }
     });
 
@@ -220,9 +213,6 @@ export function useMonthlyGoals() {
             if (context?.previousGoals) {
                 queryClient.setQueryData(['monthlyGoals', user?.id], context.previousGoals);
             }
-        },
-        onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: ['monthlyGoals', user?.id] });
         }
     });
 

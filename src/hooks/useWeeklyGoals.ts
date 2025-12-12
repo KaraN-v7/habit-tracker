@@ -117,9 +117,6 @@ export function useWeeklyGoals() {
             if (context?.previousGoals) {
                 queryClient.setQueryData(['weeklyGoals', user?.id], context.previousGoals);
             }
-        },
-        onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: ['weeklyGoals', user?.id] });
         }
     });
 
@@ -168,9 +165,6 @@ export function useWeeklyGoals() {
             if (context?.previousGoals) {
                 queryClient.setQueryData(['weeklyGoals', user?.id], context.previousGoals);
             }
-        },
-        onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: ['weeklyGoals', user?.id] });
         }
     });
 
@@ -212,9 +206,6 @@ export function useWeeklyGoals() {
             if (context?.previousGoals) {
                 queryClient.setQueryData(['weeklyGoals', user?.id], context.previousGoals);
             }
-        },
-        onSettled: () => {
-            queryClient.invalidateQueries({ queryKey: ['weeklyGoals', user?.id] });
         }
     });
 
