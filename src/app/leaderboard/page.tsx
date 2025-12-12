@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import styles from './page.module.css';
 import { useLeaderboard, UserDetails } from '@/hooks/useLeaderboard';
-import { Trophy, Medal, Award, HelpCircle, X, ChevronLeft, ChevronRight, Calendar, BookOpen, CheckCircle2, Clock, Target } from 'lucide-react';
+import { useAdmin } from '@/hooks/useAdmin';
+import { Trophy, Medal, Award, HelpCircle, X, ChevronLeft, ChevronRight, Calendar, BookOpen, CheckCircle2, Clock, Target, Trash2, Shield, UserPlus } from 'lucide-react';
 
 export default function LeaderboardPage() {
     const {
@@ -14,13 +15,23 @@ export default function LeaderboardPage() {
         setCurrentDate,
         period,
         setPeriod,
-        fetchUserDetails
+        fetchUserDetails,
+        resetProgress
     } = useLeaderboard();
+
+    const { isAdmin, addAdmin, resetAllPoints } = useAdmin();
 
     const [showHowItWorks, setShowHowItWorks] = useState(false);
     const [selectedUser, setSelectedUser] = useState<{ id: string; name: string; avatar: string } | null>(null);
     const [userDetails, setUserDetails] = useState<UserDetails | null>(null);
     const [loadingDetails, setLoadingDetails] = useState(false);
+
+    // Admin State
+    const [showAdminPanel, setShowAdminPanel] = useState(false);
+    const [newAdminId, setNewAdminId] = useState('');
+
+    // Reset State
+    const [showResetConfirm, setShowResetConfirm] = useState(false);
 
     // Date Navigation Handlers
     const navigateDate = (direction: 'prev' | 'next') => {
@@ -84,6 +95,31 @@ export default function LeaderboardPage() {
         setLoadingDetails(false);
     };
 
+    const handleReset = async (resetPeriod: 'today' | 'week' | 'month') => {
+        if (window.confirm(`Are you sure you want to reset your progress for ${resetPeriod}? This will uncheck your tasks.`)) {
+            await resetProgress(resetPeriod);
+            setShowResetConfirm(false);
+        }
+    };
+
+    const handleAddAdmin = async () => {
+        if (!newAdminId.trim()) return;
+        try {
+            await addAdmin(newAdminId);
+            alert('Admin added successfully!');
+            setNewAdminId('');
+        } catch (error) {
+            console.error(error);
+            alert('Failed to add admin.');
+        }
+    };
+
+    const handleResetAll = async () => {
+        if (window.confirm('WARNING: This will reset ALL points for EVERYONE. This action cannot be undone. Are you sure?')) {
+            await resetAllPoints();
+        }
+    };
+
     const getRankIcon = (rank: number) => {
         if (rank === 1) return <Trophy size={24} className={styles.rank1} />;
         if (rank === 2) return <Medal size={24} className={styles.rank2} />;
@@ -98,13 +134,33 @@ export default function LeaderboardPage() {
                     <h1 className={styles.title}>Leaderboard</h1>
                     <p className={styles.subtitle}>Compete with others and track your progress</p>
                 </div>
-                <button
-                    className={styles.howItWorksBtn}
-                    onClick={() => setShowHowItWorks(true)}
-                >
-                    <HelpCircle size={18} />
-                    How it Works
-                </button>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    {isAdmin && (
+                        <button
+                            className={styles.howItWorksBtn}
+                            style={{ background: '#7c3aed', color: 'white', border: 'none' }}
+                            onClick={() => setShowAdminPanel(true)}
+                        >
+                            <Shield size={18} />
+                            Admin
+                        </button>
+                    )}
+                    <button
+                        className={styles.howItWorksBtn}
+                        onClick={() => setShowHowItWorks(true)}
+                    >
+                        <HelpCircle size={18} />
+                        How it Works
+                    </button>
+                    <button
+                        className={styles.howItWorksBtn}
+                        style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)' }}
+                        onClick={() => setShowResetConfirm(true)}
+                    >
+                        <Trash2 size={18} />
+                        Reset My Points
+                    </button>
+                </div>
             </header>
 
             {/* Period Tabs */}
@@ -190,6 +246,98 @@ export default function LeaderboardPage() {
                             No data available for this period yet.
                         </div>
                     )}
+                </div>
+            )}
+
+            {/* Reset Modal */}
+            {showResetConfirm && (
+                <div className={styles.modalOverlay} onClick={() => setShowResetConfirm(false)}>
+                    <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+                        <button
+                            className={styles.closeBtn}
+                            onClick={() => setShowResetConfirm(false)}
+                        >
+                            <X size={24} />
+                        </button>
+
+                        <h2 className={styles.modalTitle}>Reset My Progress</h2>
+                        <p style={{ marginBottom: '1.5rem', color: 'var(--text-secondary)' }}>
+                            Choose a period to reset. This will uncheck all tasks for that period and reset your points. This cannot be undone.
+                        </p>
+
+                        <div style={{ display: 'grid', gap: '1rem' }}>
+                            <button className={styles.howItWorksBtn} onClick={() => handleReset('today')} style={{ justifyContent: 'center', width: '100%' }}>
+                                Reset Today's Points
+                            </button>
+                            <button className={styles.howItWorksBtn} onClick={() => handleReset('week')} style={{ justifyContent: 'center', width: '100%' }}>
+                                Reset This Week's Points
+                            </button>
+                            <button className={styles.howItWorksBtn} onClick={() => handleReset('month')} style={{ justifyContent: 'center', width: '100%' }}>
+                                Reset This Month's Points
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Admin Panel Modal */}
+            {showAdminPanel && (
+                <div className={styles.modalOverlay} onClick={() => setShowAdminPanel(false)}>
+                    <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+                        <button
+                            className={styles.closeBtn}
+                            onClick={() => setShowAdminPanel(false)}
+                        >
+                            <X size={24} />
+                        </button>
+
+                        <h2 className={styles.modalTitle}>Admin Panel</h2>
+
+                        <div className={styles.pointsSection}>
+                            <h3>⚠️ Danger Zone</h3>
+                            <button
+                                className={styles.howItWorksBtn}
+                                onClick={handleResetAll}
+                                style={{
+                                    justifyContent: 'center',
+                                    width: '100%',
+                                    background: '#ef4444',
+                                    color: 'white',
+                                    border: 'none',
+                                    marginBottom: '1rem'
+                                }}
+                            >
+                                <Trash2 size={18} />
+                                Reset ALL Points (Everyone)
+                            </button>
+                        </div>
+
+                        <div className={styles.pointsSection}>
+                            <h3>👤 Add Admin</h3>
+                            <div style={{ display: 'flex', gap: '0.5rem', flexDirection: 'column' }}>
+                                <input
+                                    type="text"
+                                    placeholder="Enter User UUID"
+                                    className={styles.contentInput} // reusing potentially? check styles
+                                    style={{ padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+                                    value={newAdminId}
+                                    onChange={(e) => setNewAdminId(e.target.value)}
+                                />
+                                <button
+                                    className={styles.howItWorksBtn}
+                                    onClick={handleAddAdmin}
+                                    style={{ justifyContent: 'center', width: '100%' }}
+                                >
+                                    <UserPlus size={18} />
+                                    Add Admin
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className={styles.noteSection}>
+                            <strong>Note:</strong> As an admin, you can now also edit past dates on the goals pages.
+                        </div>
+                    </div>
                 </div>
             )}
 
