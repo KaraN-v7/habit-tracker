@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext';
 
 export interface MonthlyGoal {
     id: string;
@@ -12,96 +13,28 @@ export interface MonthlyGoalsData {
 }
 
 export function useMonthlyGoals() {
-    const [goals, setGoals] = useState<MonthlyGoalsData>({});
-    const [loading, setLoading] = useState(true); // Start true for instant skeleton render
-    const [user, setUser] = useState<any>(null);
+    const { user } = useAuth();
+    const queryClient = useQueryClient();
 
-    // Get current user
-    useEffect(() => {
-        supabase.auth.getUser().then(({ data: { user } }) => {
-            setUser(user);
-        });
+    const { data: goals = {}, isLoading: loading, refetch } = useQuery({
+        queryKey: ['monthlyGoals', user?.id],
+        queryFn: async () => {
+            if (!user) return {};
 
-        const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-            setUser(session?.user ?? null);
-        });
-
-        return () => {
-            authListener.subscription.unsubscribe();
-        };
-    }, []);
-
-    // Load goals from Supabase
-    useEffect(() => {
-        if (!user) {
-            setLoading(false);
-            return;
-        }
-
-
-        loadGoals();
-
-        // Real-time subscriptions disabled for performance
-        // Optimistic updates already handle UI changes immediately
-        /*
-        const goalsChannel = supabase
-            .channel('monthly_goals_changes')
-            .on(
-                'postgres_changes',
-                {
-                    event: '*',
-                    schema: 'public',
-                    table: 'monthly_goals',
-                    filter: `user_id=eq.${user.id}`
-                },
-                () => {
-                    loadGoals();
-                }
-            )
-            .subscribe();
-
-        const completionsChannel = supabase
-            .channel('monthly_completions_changes')
-            .on(
-                'postgres_changes',
-                {
-                    event: '*',
-                    schema: 'public',
-                    table: 'monthly_goal_completions'
-                },
-                () => {
-                    loadGoals();
-                }
-            )
-            .subscribe();
-
-        return () => {
-            supabase.removeChannel(goalsChannel);
-            supabase.removeChannel(completionsChannel);
-        };
-        */
-    }, [user]);
-
-    const loadGoals = async () => {
-        if (!user) return;
-
-        try {
-            // Load monthly goals
             const { data: goalsData, error: goalsError } = await supabase
                 .from('monthly_goals')
                 .select(`
-          *,
-          monthly_goal_completions (
-            date,
-            completed
-          )
-        `)
+                    *,
+                    monthly_goal_completions (
+                        date,
+                        completed
+                    )
+                `)
                 .eq('user_id', user.id)
                 .order('created_at', { ascending: true });
 
             if (goalsError) throw goalsError;
 
-            // Transform to app format
             const goalsMap: MonthlyGoalsData = {};
             goalsData?.forEach((goal: any) => {
                 const monthKey = `${goal.year}-${goal.month}`;
@@ -109,7 +42,6 @@ export function useMonthlyGoals() {
                     goalsMap[monthKey] = [];
                 }
 
-                // Build completedDays map
                 const completedDays: { [date: string]: boolean } = {};
                 goal.monthly_goal_completions?.forEach((comp: any) => {
                     completedDays[comp.date] = comp.completed;
@@ -122,18 +54,16 @@ export function useMonthlyGoals() {
                 });
             });
 
-            setGoals(goalsMap);
-        } catch (error) {
-            console.error('Error loading monthly goals:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+            return goalsMap;
+        },
+        enabled: !!user,
+        staleTime: 1000 * 60 * 5, // 5 minutes cache
+        gcTime: 1000 * 60 * 30, // 30 minutes garbage collection
+    });
 
-    const saveGoals = async (monthKey: string, monthlyGoals: MonthlyGoal[]) => {
-        if (!user) return;
-
-        try {
+    const saveGoalsMutation = useMutation({
+        mutationFn: async ({ monthKey, monthlyGoals }: { monthKey: string, monthlyGoals: MonthlyGoal[] }) => {
+            if (!user) return;
             const [year, month] = monthKey.split('-').map(Number);
 
             // Delete existing goals for this month
@@ -160,7 +90,6 @@ export function useMonthlyGoals() {
 
                 if (insertError) throw insertError;
 
-                // Insert completions
                 if (goal.completedDays && Object.keys(goal.completedDays).length > 0) {
                     const completions = Object.entries(goal.completedDays).map(([date, completed]) => ({
                         monthly_goal_id: insertedGoal.id,
@@ -175,37 +104,34 @@ export function useMonthlyGoals() {
                     if (completionsError) throw completionsError;
                 }
             }
+        },
+        onMutate: async ({ monthKey, monthlyGoals }) => {
+            await queryClient.cancelQueries({ queryKey: ['monthlyGoals', user?.id] });
+            const previousGoals = queryClient.getQueryData(['monthlyGoals', user?.id]);
 
-            // Update local state
-            setGoals(prev => ({
-                ...prev,
+            queryClient.setQueryData(['monthlyGoals', user?.id], (old: MonthlyGoalsData = {}) => ({
+                ...old,
                 [monthKey]: monthlyGoals
             }));
-        } catch (error) {
-            console.error('Error saving monthly goals:', error);
+
+            return { previousGoals };
+        },
+        onError: (_err, _newTodo, context) => {
+            if (context?.previousGoals) {
+                queryClient.setQueryData(['monthlyGoals', user?.id], context.previousGoals);
+            }
+        },
+        onSettled: () => {
+            // Invalidate to ensure consistency, but allow it to happen in background
+            queryClient.invalidateQueries({ queryKey: ['monthlyGoals', user?.id] });
         }
-    };
+    });
 
-    const updateGoalCompletion = async (monthKey: string, goalId: string, date: string, completed: boolean) => {
-        if (!user) return;
-
-        // Store previous state for potential revert
-        const previousState = goals[monthKey]?.find(g => g.id === goalId)?.completedDays?.[date];
-
-        // Optimistic update
-        setGoals(prev => ({
-            ...prev,
-            [monthKey]: prev[monthKey]?.map(g =>
-                g.id === goalId
-                    ? { ...g, completedDays: { ...g.completedDays, [date]: completed } }
-                    : g
-            ) || []
-        }));
-
-        try {
+    const updateGoalCompletionMutation = useMutation({
+        mutationFn: async ({ monthKey, goalId, date, completed }: { monthKey: string, goalId: string, date: string, completed: boolean }) => {
+            if (!user) return;
             const [year, month] = monthKey.split('-').map(Number);
 
-            // Find the monthly goal
             const { data: monthlyGoal, error: findError } = await supabase
                 .from('monthly_goals')
                 .select('id')
@@ -217,7 +143,6 @@ export function useMonthlyGoals() {
 
             if (findError) throw findError;
 
-            // Upsert completion
             const { error: upsertError } = await supabase
                 .from('monthly_goal_completions')
                 .upsert({
@@ -229,42 +154,38 @@ export function useMonthlyGoals() {
                 });
 
             if (upsertError) throw upsertError;
-        } catch (error: any) {
-            const msg = error.message || error.details || error.hint || 'Unknown error';
-            // Revert the optimistic update
-            setGoals(prev => ({
-                ...prev,
-                [monthKey]: prev[monthKey]?.map(g =>
+        },
+        onMutate: async ({ monthKey, goalId, date, completed }) => {
+            await queryClient.cancelQueries({ queryKey: ['monthlyGoals', user?.id] });
+            const previousGoals = queryClient.getQueryData(['monthlyGoals', user?.id]);
+
+            queryClient.setQueryData(['monthlyGoals', user?.id], (old: MonthlyGoalsData = {}) => ({
+                ...old,
+                [monthKey]: old[monthKey]?.map(g =>
                     g.id === goalId
-                        ? { ...g, completedDays: { ...g.completedDays, [date]: previousState || false } }
+                        ? { ...g, completedDays: { ...g.completedDays, [date]: completed } }
                         : g
                 ) || []
             }));
 
-            if (msg.includes('current date')) {
-                alert(msg);
-            } else {
-                console.error('Error updating monthly goal completion:', JSON.stringify(error, null, 2));
+            return { previousGoals };
+        },
+        onError: (_err, _variables, context) => {
+            if (context?.previousGoals) {
+                queryClient.setQueryData(['monthlyGoals', user?.id], context.previousGoals);
             }
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: ['monthlyGoals', user?.id] });
         }
-    };
+    });
 
-    const updateGoalTitle = async (monthKey: string, goalId: string, newTitle: string) => {
-        if (!user) return;
-
-        // Optimistic update
-        setGoals(prev => ({
-            ...prev,
-            [monthKey]: prev[monthKey]?.map(g =>
-                g.id === goalId ? { ...g, title: newTitle } : g
-            ) || []
-        }));
-
-        try {
+    const updateGoalTitleMutation = useMutation({
+        mutationFn: async ({ monthKey, goalId, newTitle }: { monthKey: string, goalId: string, newTitle: string }) => {
+            if (!user) return;
             const [year, month] = monthKey.split('-').map(Number);
 
-            // Find the monthly goal first to get its DB ID
-            const { data: monthlyGoal } = await supabase
+            const { data: monthlyGoal, error: findError } = await supabase
                 .from('monthly_goals')
                 .select('id')
                 .eq('user_id', user.id)
@@ -273,20 +194,48 @@ export function useMonthlyGoals() {
                 .eq('goal_id', goalId)
                 .single();
 
-            if (monthlyGoal) {
-                // Update existing
-                const { error } = await supabase
-                    .from('monthly_goals')
-                    .update({ title: newTitle })
-                    .eq('id', monthlyGoal.id);
+            if (findError) return; // Might be new goal passed to saveGoals
 
-                if (error) throw error;
-            } else {
-                console.warn('Goal not found in DB for update, it might be new.');
+            const { error } = await supabase
+                .from('monthly_goals')
+                .update({ title: newTitle })
+                .eq('id', monthlyGoal.id);
+
+            if (error) throw error;
+        },
+        onMutate: async ({ monthKey, goalId, newTitle }) => {
+            await queryClient.cancelQueries({ queryKey: ['monthlyGoals', user?.id] });
+            const previousGoals = queryClient.getQueryData(['monthlyGoals', user?.id]);
+
+            queryClient.setQueryData(['monthlyGoals', user?.id], (old: MonthlyGoalsData = {}) => ({
+                ...old,
+                [monthKey]: old[monthKey]?.map(g =>
+                    g.id === goalId ? { ...g, title: newTitle } : g
+                ) || []
+            }));
+
+            return { previousGoals };
+        },
+        onError: (_err, _variables, context) => {
+            if (context?.previousGoals) {
+                queryClient.setQueryData(['monthlyGoals', user?.id], context.previousGoals);
             }
-        } catch (error) {
-            console.error('Error updating monthly goal title:', error);
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: ['monthlyGoals', user?.id] });
         }
+    });
+
+    const saveGoals = (monthKey: string, monthlyGoals: MonthlyGoal[]) => {
+        saveGoalsMutation.mutate({ monthKey, monthlyGoals });
+    };
+
+    const updateGoalCompletion = (monthKey: string, goalId: string, date: string, completed: boolean) => {
+        updateGoalCompletionMutation.mutate({ monthKey, goalId, date, completed });
+    };
+
+    const updateGoalTitle = (monthKey: string, goalId: string, newTitle: string) => {
+        updateGoalTitleMutation.mutate({ monthKey, goalId, newTitle });
     };
 
     return {
@@ -296,6 +245,6 @@ export function useMonthlyGoals() {
         saveGoals,
         updateGoalCompletion,
         updateGoalTitle,
-        refreshGoals: loadGoals
+        refreshGoals: refetch
     };
 }

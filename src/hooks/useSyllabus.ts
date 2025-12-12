@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext';
 
 export interface Chapter {
     id: string;
@@ -15,88 +16,25 @@ export interface Subject {
 }
 
 export function useSyllabus() {
-    const [subjects, setSubjects] = useState<Subject[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [user, setUser] = useState<any>(null);
+    const { user } = useAuth();
+    const queryClient = useQueryClient();
 
-    // Get current user
-    useEffect(() => {
-        supabase.auth.getUser().then(({ data: { user } }) => {
-            setUser(user);
-        });
+    const { data: subjects = [], isLoading: loading, refetch } = useQuery({
+        queryKey: ['syllabus', user?.id],
+        queryFn: async () => {
+            if (!user) return [];
 
-        const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-            setUser(session?.user ?? null);
-        });
-
-        return () => {
-            authListener.subscription.unsubscribe();
-        };
-    }, []);
-
-    // Load syllabus from Supabase
-    useEffect(() => {
-        if (!user) {
-            setLoading(false);
-            return;
-        }
-
-        loadSyllabus();
-
-        // Subscribe to real-time changes
-        const subjectsChannel = supabase
-            .channel('subjects_changes')
-            .on(
-                'postgres_changes',
-                {
-                    event: '*',
-                    schema: 'public',
-                    table: 'subjects',
-                    filter: `user_id=eq.${user.id}`
-                },
-                () => {
-                    loadSyllabus();
-                }
-            )
-            .subscribe();
-
-        const chaptersChannel = supabase
-            .channel('chapters_changes')
-            .on(
-                'postgres_changes',
-                {
-                    event: '*',
-                    schema: 'public',
-                    table: 'chapters'
-                },
-                () => {
-                    loadSyllabus();
-                }
-            )
-            .subscribe();
-
-        return () => {
-            supabase.removeChannel(subjectsChannel);
-            supabase.removeChannel(chaptersChannel);
-        };
-    }, [user]);
-
-    const loadSyllabus = async () => {
-        if (!user) return;
-
-        try {
-            // Load subjects with chapters
             const { data: subjectsData, error: subjectsError } = await supabase
                 .from('subjects')
                 .select(`
-          *,
-          chapters (
-            id,
-            chapter_id,
-            name,
-            completed
-          )
-        `)
+                    *,
+                    chapters (
+                        id,
+                        chapter_id,
+                        name,
+                        completed
+                    )
+                `)
                 .eq('user_id', user.id)
                 .order('created_at', { ascending: true });
 
@@ -114,18 +52,17 @@ export function useSyllabus() {
                 })) || []
             })) || [];
 
-            setSubjects(subjectsArray);
-        } catch (error) {
-            console.error('Error loading syllabus:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+            return subjectsArray;
+        },
+        enabled: !!user,
+        staleTime: 1000 * 60 * 5,
+        gcTime: 1000 * 60 * 30,
+    });
 
-    const saveSubjects = async (updatedSubjects: Subject[]) => {
-        if (!user) return;
+    const saveSubjectsMutation = useMutation({
+        mutationFn: async (updatedSubjects: Subject[]) => {
+            if (!user) return;
 
-        try {
             // Delete all existing subjects and chapters (cascade will handle chapters)
             await supabase
                 .from('subjects')
@@ -163,18 +100,29 @@ export function useSyllabus() {
                     if (chaptersError) throw chaptersError;
                 }
             }
+        },
+        onMutate: async (updatedSubjects) => {
+            await queryClient.cancelQueries({ queryKey: ['syllabus', user?.id] });
+            const previousSubjects = queryClient.getQueryData(['syllabus', user?.id]);
 
-            // Update local state
-            setSubjects(updatedSubjects);
-        } catch (error) {
-            console.error('Error saving syllabus:', error);
+            queryClient.setQueryData(['syllabus', user?.id], updatedSubjects);
+
+            return { previousSubjects };
+        },
+        onError: (_err, _vars, context) => {
+            if (context?.previousSubjects) {
+                queryClient.setQueryData(['syllabus', user?.id], context.previousSubjects);
+            }
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: ['syllabus', user?.id] });
         }
-    };
+    });
 
-    const updateChapterCompletion = async (subjectId: string, chapterId: string, completed: boolean) => {
-        if (!user) return;
+    const updateChapterCompletionMutation = useMutation({
+        mutationFn: async ({ subjectId, chapterId, completed }: { subjectId: string, chapterId: string, completed: boolean }) => {
+            if (!user) return;
 
-        try {
             // Find the subject's database ID
             const { data: subject, error: subjectError } = await supabase
                 .from('subjects')
@@ -193,10 +141,13 @@ export function useSyllabus() {
                 .eq('chapter_id', chapterId);
 
             if (updateError) throw updateError;
+        },
+        onMutate: async ({ subjectId, chapterId, completed }) => {
+            await queryClient.cancelQueries({ queryKey: ['syllabus', user?.id] });
+            const previousSubjects = queryClient.getQueryData(['syllabus', user?.id]);
 
-            // Update local state
-            setSubjects(prev =>
-                prev.map(s =>
+            queryClient.setQueryData(['syllabus', user?.id], (old: Subject[] = []) =>
+                old.map(s =>
                     s.id === subjectId
                         ? {
                             ...s,
@@ -207,15 +158,23 @@ export function useSyllabus() {
                         : s
                 )
             );
-        } catch (error) {
-            console.error('Error updating chapter completion:', error);
+
+            return { previousSubjects };
+        },
+        onError: (_err, _vars, context) => {
+            if (context?.previousSubjects) {
+                queryClient.setQueryData(['syllabus', user?.id], context.previousSubjects);
+            }
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: ['syllabus', user?.id] });
         }
-    };
+    });
 
-    const updateSubjectName = async (subjectId: string, newName: string) => {
-        if (!user) return;
+    const updateSubjectNameMutation = useMutation({
+        mutationFn: async ({ subjectId, newName }: { subjectId: string, newName: string }) => {
+            if (!user) return;
 
-        try {
             const { error } = await supabase
                 .from('subjects')
                 .update({ name: newName })
@@ -223,22 +182,33 @@ export function useSyllabus() {
                 .eq('subject_id', subjectId);
 
             if (error) throw error;
+        },
+        onMutate: async ({ subjectId, newName }) => {
+            await queryClient.cancelQueries({ queryKey: ['syllabus', user?.id] });
+            const previousSubjects = queryClient.getQueryData(['syllabus', user?.id]);
 
-            setSubjects(prev =>
-                prev.map(s =>
+            queryClient.setQueryData(['syllabus', user?.id], (old: Subject[] = []) =>
+                old.map(s =>
                     s.id === subjectId ? { ...s, name: newName } : s
                 )
             );
-        } catch (error) {
-            console.error('Error updating subject name:', error);
-            throw error;
+
+            return { previousSubjects };
+        },
+        onError: (_err, _vars, context) => {
+            if (context?.previousSubjects) {
+                queryClient.setQueryData(['syllabus', user?.id], context.previousSubjects);
+            }
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: ['syllabus', user?.id] });
         }
-    };
+    });
 
-    const updateChapterName = async (subjectId: string, chapterId: string, newName: string) => {
-        if (!user) return;
+    const updateChapterNameMutation = useMutation({
+        mutationFn: async ({ subjectId, chapterId, newName }: { subjectId: string, chapterId: string, newName: string }) => {
+            if (!user) return;
 
-        try {
             // Find the subject's database ID
             const { data: subject, error: subjectError } = await supabase
                 .from('subjects')
@@ -256,9 +226,13 @@ export function useSyllabus() {
                 .eq('chapter_id', chapterId);
 
             if (error) throw error;
+        },
+        onMutate: async ({ subjectId, chapterId, newName }) => {
+            await queryClient.cancelQueries({ queryKey: ['syllabus', user?.id] });
+            const previousSubjects = queryClient.getQueryData(['syllabus', user?.id]);
 
-            setSubjects(prev =>
-                prev.map(s =>
+            queryClient.setQueryData(['syllabus', user?.id], (old: Subject[] = []) =>
+                old.map(s =>
                     s.id === subjectId
                         ? {
                             ...s,
@@ -269,10 +243,33 @@ export function useSyllabus() {
                         : s
                 )
             );
-        } catch (error) {
-            console.error('Error updating chapter name:', error);
-            throw error;
+
+            return { previousSubjects };
+        },
+        onError: (_err, _vars, context) => {
+            if (context?.previousSubjects) {
+                queryClient.setQueryData(['syllabus', user?.id], context.previousSubjects);
+            }
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: ['syllabus', user?.id] });
         }
+    });
+
+    const saveSubjects = (updatedSubjects: Subject[]) => {
+        saveSubjectsMutation.mutate(updatedSubjects);
+    };
+
+    const updateChapterCompletion = (subjectId: string, chapterId: string, completed: boolean) => {
+        updateChapterCompletionMutation.mutate({ subjectId, chapterId, completed });
+    };
+
+    const updateSubjectName = (subjectId: string, newName: string) => {
+        updateSubjectNameMutation.mutate({ subjectId, newName });
+    };
+
+    const updateChapterName = (subjectId: string, chapterId: string, newName: string) => {
+        updateChapterNameMutation.mutate({ subjectId, chapterId, newName });
     };
 
     return {
@@ -283,6 +280,6 @@ export function useSyllabus() {
         updateChapterCompletion,
         updateSubjectName,
         updateChapterName,
-        refreshSyllabus: loadSyllabus
+        refreshSyllabus: refetch
     };
 }

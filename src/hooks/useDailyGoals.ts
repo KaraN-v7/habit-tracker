@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext';
 
 export type BlockType = 'text' | 'todo';
 export type GoalSource = 'daily' | 'weekly' | 'monthly';
@@ -18,64 +19,14 @@ export interface DailyGoals {
 }
 
 export function useDailyGoals() {
-    const [goals, setGoals] = useState<DailyGoals>({});
-    const [loading, setLoading] = useState(true); // Start true, then immediately render skeleton
-    const [user, setUser] = useState<any>(null);
+    const { user } = useAuth();
+    const queryClient = useQueryClient();
 
-    // Get current user
-    useEffect(() => {
-        supabase.auth.getUser().then(({ data: { user } }) => {
-            setUser(user);
-        });
+    const { data: goals = {}, isLoading: loading, refetch } = useQuery({
+        queryKey: ['dailyGoals', user?.id],
+        queryFn: async () => {
+            if (!user) return {};
 
-        const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-            setUser(session?.user ?? null);
-        });
-
-        return () => {
-            authListener.subscription.unsubscribe();
-        };
-    }, []);
-
-    // Load goals from Supabase
-    useEffect(() => {
-        if (!user) {
-            setLoading(false);
-            return;
-        }
-
-
-        loadGoals();
-
-        // Real-time subscriptions disabled for performance
-        // Optimistic updates already handle UI changes immediately
-        /*
-        const channel = supabase
-            .channel('daily_goals_changes')
-            .on(
-                'postgres_changes',
-                {
-                    event: '*',
-                    schema: 'public',
-                    table: 'daily_goals',
-                    filter: `user_id=eq.${user.id}`
-                },
-                () => {
-                    loadGoals();
-                }
-            )
-            .subscribe();
-
-        return () => {
-            supabase.removeChannel(channel);
-        };
-        */
-    }, [user]);
-
-    const loadGoals = async () => {
-        if (!user) return;
-
-        try {
             const { data, error } = await supabase
                 .from('daily_goals')
                 .select('*')
@@ -84,7 +35,6 @@ export function useDailyGoals() {
 
             if (error) throw error;
 
-            // Transform database format to app format
             const goalsMap: DailyGoals = {};
             data?.forEach((goal) => {
                 const dateKey = goal.date;
@@ -101,18 +51,17 @@ export function useDailyGoals() {
                 });
             });
 
-            setGoals(goalsMap);
-        } catch (error) {
-            console.error('Error loading daily goals:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+            return goalsMap;
+        },
+        enabled: !!user,
+        staleTime: 1000 * 60 * 5,
+        gcTime: 1000 * 60 * 30,
+    });
 
-    const saveGoals = async (dateKey: string, blocks: Block[]) => {
-        if (!user) return;
+    const saveGoalsMutation = useMutation({
+        mutationFn: async ({ dateKey, blocks }: { dateKey: string, blocks: Block[] }) => {
+            if (!user) return;
 
-        try {
             // Delete existing goals for this date (daily only)
             await supabase
                 .from('daily_goals')
@@ -142,40 +91,38 @@ export function useDailyGoals() {
 
                 if (error) throw error;
             }
+        },
+        onMutate: async ({ dateKey, blocks }) => {
+            await queryClient.cancelQueries({ queryKey: ['dailyGoals', user?.id] });
+            const previousGoals = queryClient.getQueryData(['dailyGoals', user?.id]);
 
-            // Update local state
-            setGoals(prev => ({
-                ...prev,
+            queryClient.setQueryData(['dailyGoals', user?.id], (old: DailyGoals = {}) => ({
+                ...old,
                 [dateKey]: blocks.filter(b => !b.source || b.source === 'daily')
             }));
-        } catch (error: any) {
-            console.error('Error saving daily goals:', {
-                message: error?.message,
-                code: error?.code,
-                details: error?.details,
-                hint: error?.hint,
-                fullError: error
-            });
+
+            return { previousGoals };
+        },
+        onError: (_err, _vars, context) => {
+            if (context?.previousGoals) {
+                queryClient.setQueryData(['dailyGoals', user?.id], context.previousGoals);
+            }
+        },
+        onSettled: () => {
+            // Invalidate to ensure consistency
+            queryClient.invalidateQueries({ queryKey: ['dailyGoals', user?.id] });
         }
-    };
+    });
 
-    const updateGoalCompletion = async (dateKey: string, blockId: string, completed: boolean) => {
-        if (!user) return;
+    const updateGoalCompletionMutation = useMutation({
+        mutationFn: async ({ dateKey, blockId, completed }: { dateKey: string, blockId: string, completed: boolean }) => {
+            if (!user) return;
 
-        // Find the block to check for parentId
-        const block = goals[dateKey]?.find(b => b.id === blockId);
-        const parentId = block?.parentId;
-        const previousCompleted = block?.completed;
+            // Find block info for syllabus sync
+            const currentGoals = queryClient.getQueryData(['dailyGoals', user?.id]) as DailyGoals;
+            const block = currentGoals?.[dateKey]?.find(b => b.id === blockId);
+            const parentId = block?.parentId;
 
-        // Optimistic update
-        setGoals(prev => ({
-            ...prev,
-            [dateKey]: prev[dateKey]?.map(b =>
-                b.id === blockId ? { ...b, completed } : b
-            ) || []
-        }));
-
-        try {
             const { error } = await supabase
                 .from('daily_goals')
                 .update({ completed })
@@ -196,35 +143,74 @@ export function useDailyGoals() {
                     console.error('Error syncing chapter completion:', chapterError);
                 }
             }
-        } catch (error: any) {
-            const msg = error.message || error.details || error.hint || 'Unknown error';
-            if (msg.includes('current date')) {
-                // Revert the optimistic update
-                setGoals(prev => ({
-                    ...prev,
-                    [dateKey]: prev[dateKey]?.map(b =>
-                        b.id === blockId ? { ...b, completed: previousCompleted || false } : b
-                    ) || []
-                }));
-                alert(msg);
-            } else {
-                console.error('Error updating goal completion:', JSON.stringify(error, null, 2));
-                console.log('Full error object:', error);
-                // Revert on any error
-                setGoals(prev => ({
-                    ...prev,
-                    [dateKey]: prev[dateKey]?.map(b =>
-                        b.id === blockId ? { ...b, completed: previousCompleted || false } : b
-                    ) || []
-                }));
+        },
+        onMutate: async ({ dateKey, blockId, completed }) => {
+            await queryClient.cancelQueries({ queryKey: ['dailyGoals', user?.id] });
+            const previousGoals = queryClient.getQueryData(['dailyGoals', user?.id]);
+
+            queryClient.setQueryData(['dailyGoals', user?.id], (old: DailyGoals = {}) => ({
+                ...old,
+                [dateKey]: old[dateKey]?.map(b =>
+                    b.id === blockId ? { ...b, completed } : b
+                ) || []
+            }));
+
+            return { previousGoals };
+        },
+        onError: (_err, _vars, context) => {
+            if (context?.previousGoals) {
+                queryClient.setQueryData(['dailyGoals', user?.id], context.previousGoals);
             }
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: ['dailyGoals', user?.id] });
         }
-    };
+    });
 
-    const addGoal = async (dateKey: string, block: Block) => {
-        if (!user) return;
+    const updateBlockContentMutation = useMutation({
+        mutationFn: async ({ dateKey, blockId, updates }: { dateKey: string, blockId: string, updates: Partial<Block> }) => {
+            if (!user) return;
 
-        try {
+            const dbUpdates: any = {};
+            if ('content' in updates) dbUpdates.content = updates.content;
+            if ('type' in updates) dbUpdates.type = updates.type;
+
+            const { error } = await supabase
+                .from('daily_goals')
+                .update(dbUpdates)
+                .eq('user_id', user.id)
+                .eq('date', dateKey)
+                .eq('block_id', blockId);
+
+            if (error) throw error;
+        },
+        onMutate: async ({ dateKey, blockId, updates }) => {
+            await queryClient.cancelQueries({ queryKey: ['dailyGoals', user?.id] });
+            const previousGoals = queryClient.getQueryData(['dailyGoals', user?.id]);
+
+            queryClient.setQueryData(['dailyGoals', user?.id], (old: DailyGoals = {}) => ({
+                ...old,
+                [dateKey]: old[dateKey]?.map(b =>
+                    b.id === blockId ? { ...b, ...updates } : b
+                ) || []
+            }));
+
+            return { previousGoals };
+        },
+        onError: (_err, _vars, context) => {
+            if (context?.previousGoals) {
+                queryClient.setQueryData(['dailyGoals', user?.id], context.previousGoals);
+            }
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: ['dailyGoals', user?.id] });
+        }
+    });
+
+    // Legacy addGoal function was not heavily used in main page but good to support
+    const addGoalMutation = useMutation({
+        mutationFn: async ({ dateKey, block }: { dateKey: string, block: Block }) => {
+            if (!user) return;
             const goalToInsert = {
                 user_id: user.id,
                 date: dateKey,
@@ -241,50 +227,43 @@ export function useDailyGoals() {
                 .insert(goalToInsert);
 
             if (error) throw error;
+        },
+        onMutate: async ({ dateKey, block }) => {
+            await queryClient.cancelQueries({ queryKey: ['dailyGoals', user?.id] });
+            const previousGoals = queryClient.getQueryData(['dailyGoals', user?.id]);
 
-            // Update local state
-            setGoals(prev => ({
-                ...prev,
-                [dateKey]: [...(prev[dateKey] || []), block]
+            queryClient.setQueryData(['dailyGoals', user?.id], (old: DailyGoals = {}) => ({
+                ...old,
+                [dateKey]: [...(old[dateKey] || []), block]
             }));
-        } catch (error: any) {
-            console.error('Error adding daily goal:', {
-                message: error?.message,
-                code: error?.code,
-                details: error?.details,
-                hint: error?.hint,
-                fullError: error
-            });
+
+            return { previousGoals };
+        },
+        onError: (_err, _vars, context) => {
+            if (context?.previousGoals) {
+                queryClient.setQueryData(['dailyGoals', user?.id], context.previousGoals);
+            }
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: ['dailyGoals', user?.id] });
         }
+    });
+
+
+    const saveGoals = (dateKey: string, blocks: Block[]) => {
+        saveGoalsMutation.mutate({ dateKey, blocks });
     };
 
-    const updateBlockContent = async (dateKey: string, blockId: string, updates: Partial<Block>) => {
-        if (!user) return;
+    const updateGoalCompletion = (dateKey: string, blockId: string, completed: boolean) => {
+        updateGoalCompletionMutation.mutate({ dateKey, blockId, completed });
+    };
 
-        // Optimistic update
-        setGoals(prev => ({
-            ...prev,
-            [dateKey]: prev[dateKey]?.map(b =>
-                b.id === blockId ? { ...b, ...updates } : b
-            ) || []
-        }));
+    const updateBlockContent = (dateKey: string, blockId: string, updates: Partial<Block>) => {
+        updateBlockContentMutation.mutate({ dateKey, blockId, updates });
+    };
 
-        try {
-            const dbUpdates: any = {};
-            if ('content' in updates) dbUpdates.content = updates.content;
-            if ('type' in updates) dbUpdates.type = updates.type;
-
-            const { error } = await supabase
-                .from('daily_goals')
-                .update(dbUpdates)
-                .eq('user_id', user.id)
-                .eq('date', dateKey)
-                .eq('block_id', blockId);
-
-            if (error) throw error;
-        } catch (error) {
-            console.error('Error updating block content:', error);
-        }
+    const addGoal = (dateKey: string, block: Block) => {
+        addGoalMutation.mutate({ dateKey, block });
     };
 
     return {
@@ -295,6 +274,6 @@ export function useDailyGoals() {
         addGoal,
         updateGoalCompletion,
         updateBlockContent,
-        refreshGoals: loadGoals
+        refreshGoals: refetch
     };
 }
