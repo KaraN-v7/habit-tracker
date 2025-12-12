@@ -134,7 +134,7 @@ export default function LeaderboardPage() {
                     <h1 className={styles.title}>Leaderboard</h1>
                     <p className={styles.subtitle}>Compete with others and track your progress</p>
                 </div>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <div className={styles.actions}>
                     {isAdmin && (
                         <button
                             className={styles.howItWorksBtn}

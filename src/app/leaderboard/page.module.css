@@ -11,6 +11,12 @@
     align-items: center;
 }
 
+.actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
 .title {
     font-size: 2rem;
     font-weight: 700;
@@ -37,6 +43,8 @@
     cursor: pointer;
     font-weight: 500;
     transition: all 0.2s;
+    white-space: nowrap;
+    /* Prevent text wrapping inside button */
 }
 
 .howItWorksBtn:hover {
@@ -415,9 +423,31 @@
     color: #60a5fa;
 }
 
+/* Base Mobile Adjustments */
 @media (max-width: 768px) {
     .container {
         padding: 1rem;
+    }
+
+    /* Stack header elements */
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1.5rem;
+    }
+
+    /* Allow buttons to wrap and fill width */
+    .actions {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+
+    /* Make buttons flexible to fill space */
+    .howItWorksBtn {
+        flex: 1;
+        justify-content: center;
+        padding: 0.75rem;
+        font-size: 0.95rem;
     }
 
     .dateNav {
