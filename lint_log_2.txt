@@ -1,0 +1,157 @@
+﻿
+> habit-tracker@0.1.0 lint
+> eslint
+
+
+C:\Users\karan\Desktop\Habit Tracker\src\app\analytics\page.tsx
+   24:20  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   73:35  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  122:28  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  122:41  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  122:55  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  136:37  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  165:38  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  194:39  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  229:41  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  257:38  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  290:39  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  328:41  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  364:46  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  401:39  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  482:30  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  706:60  warning  'index' is defined but never used         @typescript-eslint/no-unused-vars
+  741:94  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  758:60  warning  'index' is defined but never used         @typescript-eslint/no-unused-vars
+
+C:\Users\karan\Desktop\Habit Tracker\src\app\leaderboard\page.tsx
+    3:27  warning  'useEffect' is defined but never used                                                                                                                                                                                                                                                    @typescript-eslint/no-unused-vars
+   75:42  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  169:33  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  208:29  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  332:42  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                                                                                                                                                                          react/no-unescaped-entities
+  332:61  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                                                                                                                                                                          react/no-unescaped-entities
+
+C:\Users\karan\Desktop\Habit Tracker\src\app\login\page.tsx
+  3:28  warning  'useState' is defined but never used  @typescript-eslint/no-unused-vars
+  6:10  warning  'supabase' is defined but never used  @typescript-eslint/no-unused-vars
+  8:8   warning  'Link' is defined but never used      @typescript-eslint/no-unused-vars
+
+C:\Users\karan\Desktop\Habit Tracker\src\app\monthly\page.tsx
+  104:17  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+C:\Users\karan\Desktop\Habit Tracker\src\app\monthly\page.tsx:104:17
+  102 |     const addGoal = async () => {
+  103 |         const newGoal = {
+> 104 |             id: Math.random().toString(36).substr(2, 9),
+      |                 ^^^^^^^^^^^^^ Cannot call impure function
+  105 |             title: '',
+  106 |             completedDays: {}
+  107 |         };  react-hooks/purity
+
+C:\Users\karan\Desktop\Habit Tracker\src\app\page.tsx
+   92:28  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+C:\Users\karan\Desktop\Habit Tracker\src\app\page.tsx:92:28
+  90 |   };
+  91 |
+> 92 |   const generateId = () => Math.random().toString(36).substr(2, 9);
+     |                            ^^^^^^^^^^^^^ Cannot call impure function
+  93 |
+  94 |   const addBlock = async (afterId: string | null = null, type: BlockType = 'todo') => {
+  95 |     const newBlock: Block = {  react-hooks/purity
+  103:9   error  'newBlocks' is never reassigned. Use 'const' instead                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                prefer-const
+
+C:\Users\karan\Desktop\Habit Tracker\src\app\profile\page.tsx
+   23:64  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+   79:25  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+   99:54  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+   99:78  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  161:25  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  193:29  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\karan\Desktop\Habit Tracker\src\app\signup\page.tsx
+   7:8   warning  'Link' is defined but never used             @typescript-eslint/no-unused-vars
+  11:11  warning  'router' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  22:25  error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+
+C:\Users\karan\Desktop\Habit Tracker\src\app\syllabus\page.tsx
+   29:24  warning  'saveDailyGoals' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  135:43  error    Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  147:18  warning  'error' is defined but never used                    @typescript-eslint/no-unused-vars
+  152:43  error    Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  164:18  warning  'error' is defined but never used                    @typescript-eslint/no-unused-vars
+  179:39  error    Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  181:55  error    Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+
+C:\Users\karan\Desktop\Habit Tracker\src\app\weekly\page.tsx
+  167:17  error  Error: Cannot call impure function during render
+
+`Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+C:\Users\karan\Desktop\Habit Tracker\src\app\weekly\page.tsx:167:17
+  165 |         const weekGoals = goals[weekKey] || [];
+  166 |         const newGoal = {
+> 167 |             id: Math.random().toString(36).substr(2, 9),
+      |                 ^^^^^^^^^^^^^ Cannot call impure function
+  168 |             title: '',
+  169 |             completedDays: {}
+  170 |         };  react-hooks/purity
+
+C:\Users\karan\Desktop\Habit Tracker\src\components\Sidebar\Sidebar.tsx
+  11:5   warning  'CheckSquare' is defined but never used                                                                                                                                                                                                                                                  @typescript-eslint/no-unused-vars
+  14:5   warning  'Settings' is defined but never used                                                                                                                                                                                                                                                     @typescript-eslint/no-unused-vars
+  98:25  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\karan\Desktop\Habit Tracker\src\context\DataCacheContext.tsx
+  1:1  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+
+C:\Users\karan\Desktop\Habit Tracker\src\hooks\useDailyGoals.ts
+   23:38  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+   73:8   warning  React Hook useEffect has a missing dependency: 'loadGoals'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  151:25  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+  199:25  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+  250:25  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+  273:30  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+
+C:\Users\karan\Desktop\Habit Tracker\src\hooks\useLeaderboard.ts
+   85:48  error    Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  120:36  error    Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  121:51  error    Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  122:55  error    Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  123:56  error    Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  171:8   warning  React Hook useEffect has a missing dependency: 'fetchLeaderboard'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\karan\Desktop\Habit Tracker\src\hooks\useMonthlyGoals.ts
+   17:38  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+   83:8   warning  React Hook useEffect has a missing dependency: 'loadGoals'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  106:39  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+  114:63  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+  232:25  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+
+C:\Users\karan\Desktop\Habit Tracker\src\hooks\useSyllabus.ts
+   20:38  error    Unexpected any. Specify a different type                                                                         @typescript-eslint/no-explicit-any
+   82:8   warning  React Hook useEffect has a missing dependency: 'loadSyllabus'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  106:74  error    Unexpected any. Specify a different type                                                                         @typescript-eslint/no-explicit-any
+  110:59  error    Unexpected any. Specify a different type                                                                         @typescript-eslint/no-explicit-any
+
+C:\Users\karan\Desktop\Habit Tracker\src\hooks\useUserPreferences.ts
+   9:38  error    Unexpected any. Specify a different type                                                                            @typescript-eslint/no-explicit-any
+  60:8   warning  React Hook useEffect has a missing dependency: 'loadPreferences'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\karan\Desktop\Habit Tracker\src\hooks\useWeeklyGoals.ts
+   17:38  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+   84:8   warning  React Hook useEffect has a missing dependency: 'loadGoals'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  107:39  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+  115:62  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+  226:25  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+
+C:\Users\karan\Desktop\Habit Tracker\src\utils\cropImage.ts
+  84:34  warning  'reject' is defined but never used  @typescript-eslint/no-unused-vars
+
+Γ£û 80 problems (55 errors, 25 warnings)
+  1 error and 0 warnings potentially fixable with the `--fix` option.
+

@@ -164,7 +164,7 @@ export default function WeeklyPage() {
     const addGoal = async () => {
         const weekGoals = goals[weekKey] || [];
         const newGoal = {
-            id: Math.random().toString(36).substr(2, 9),
+            id: crypto.randomUUID(),
             title: '',
             completedDays: {}
         };

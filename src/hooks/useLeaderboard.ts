@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 
 export interface LeaderboardEntry {
@@ -26,7 +27,7 @@ export function useLeaderboard() {
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
     const [userPoints, setUserPoints] = useState<number>(0);
     const [loading, setLoading] = useState(true);
-    const [currentUser, setCurrentUser] = useState<any>(null);
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
 
     // State for navigation
     const [currentDate, setCurrentDate] = useState(new Date());
