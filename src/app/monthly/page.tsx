@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styles from './page.module.css';
 import { ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-react';
-import { useMonthlyGoals } from '@/hooks/useMonthlyGoals';
+import { useMonthlyGoals, MonthlyGoal } from '@/hooks/useMonthlyGoals';
 
 // Debounced Input Component
 const DebouncedInput = ({
@@ -58,7 +58,8 @@ const DebouncedInput = ({
 
 export default function MonthlyPage() {
     const [currentMonth, setCurrentMonth] = useState(new Date());
-    const { goals, loading, saveGoals, updateGoalCompletion, updateGoalTitle, user } = useMonthlyGoals();
+    const [newWinText, setNewWinText] = useState('');
+    const { goals, wins, loading, saveGoals, updateGoalCompletion, updateGoalTitle, addWin, deleteWin, user } = useMonthlyGoals();
 
     const getMonthKey = (date: Date) => {
         return `${date.getFullYear()}-${date.getMonth()}`;
@@ -71,16 +72,22 @@ export default function MonthlyPage() {
         return `${year}-${month}-${day}`;
     };
 
-    const getDaysInMonth = (date: Date) => {
+    // Calculate weeks in the month (chunks of 7 days)
+    const getWeeksInMonth = (date: Date) => {
         const year = date.getFullYear();
         const month = date.getMonth();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
-        const days = [];
+        const weeks = [];
+        let currentWeek = [];
 
         for (let i = 1; i <= daysInMonth; i++) {
-            days.push(new Date(year, month, i));
+            currentWeek.push(new Date(year, month, i));
+            if (currentWeek.length === 7 || i === daysInMonth) {
+                weeks.push(currentWeek);
+                currentWeek = [];
+            }
         }
-        return days;
+        return weeks;
     };
 
     const changeMonth = (months: number) => {
@@ -97,7 +104,9 @@ export default function MonthlyPage() {
 
     const monthKey = getMonthKey(currentMonth);
     const currentGoals = goals[monthKey] || [];
-    const daysInMonth = getDaysInMonth(currentMonth);
+    const currentWins = wins[monthKey] || [];
+    const weeks = getWeeksInMonth(currentMonth);
+    const daysInMonth = weeks.flat();
 
     const addGoal = async () => {
         const newGoal = {
@@ -125,9 +134,71 @@ export default function MonthlyPage() {
         await saveGoals(monthKey, updatedGoals);
     };
 
+    const handleAddWin = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newWinText.trim()) return;
+        addWin(monthKey, newWinText);
+        setNewWinText('');
+    };
+
     const formatMonthYear = (date: Date) => {
         return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
     };
+
+    const calculateProgress = (goal: MonthlyGoal) => {
+        if (!goal.completedDays) return 0;
+        const totalDays = daysInMonth.length;
+        const completedCount = Object.values(goal.completedDays).filter(Boolean).length;
+        return Math.round((completedCount / totalDays) * 100);
+    };
+
+    // Calculate Footer Stats
+    const getFooterStats = () => {
+        const dailyCompletionPercentage: number[] = [];
+        const dailyCompletedCount: number[] = [];
+        const dailyTotalCount: number[] = [];
+
+        daysInMonth.forEach(day => {
+            const dateStr = getISODate(day);
+            let yes = 0;
+            let total = 0;
+            currentGoals.forEach(g => {
+                if (g.title) {
+                    total++;
+                    if (g.completedDays?.[dateStr]) yes++;
+                }
+            });
+            dailyCompletedCount.push(yes);
+            dailyTotalCount.push(total);
+            dailyCompletionPercentage.push(total === 0 ? 0 : Math.round((yes / total) * 100));
+        });
+
+        return { dailyCompletionPercentage, dailyCompletedCount, dailyTotalCount };
+    };
+
+    const footerStats = getFooterStats();
+
+    // Calculate Overall Monthly Stats
+    const getTotalStats = () => {
+        if (!currentGoals.length) return { monthlyCompletionPercentage: 0, totalCompletedTasks: 0, totalTasks: 0 };
+
+        let totalTasks = 0;
+        let totalCompletedTasks = 0;
+
+        currentGoals.forEach(g => {
+            if (g.title) {
+                totalTasks += daysInMonth.length;
+                if (g.completedDays) {
+                    totalCompletedTasks += Object.values(g.completedDays).filter(Boolean).length;
+                }
+            }
+        });
+
+        const monthlyCompletionPercentage = totalTasks === 0 ? 0 : Math.round((totalCompletedTasks / totalTasks) * 100);
+        return { monthlyCompletionPercentage, totalCompletedTasks, totalTasks };
+    };
+
+    const totalStats = getTotalStats();
 
     if (!user) {
         return (
@@ -168,77 +239,271 @@ export default function MonthlyPage() {
                         <ChevronRight size={24} />
                     </button>
                 </div>
-                <div>
-                    <span>Monthly Goals</span>
+
+                {/* Compact Monthly Overview in Header */}
+                <div className={styles.overviewCardCompact}>
+                    <div style={{ marginRight: '1rem', textAlign: 'right' }}>
+                        <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--fg-secondary)', marginBottom: '0.2rem' }}>MONTHLY OVERVIEW</div>
+                        <div style={{ fontSize: '0.9rem', fontWeight: 500 }}>
+                            {totalStats.totalCompletedTasks} / {totalStats.totalTasks} Habits
+                        </div>
+                    </div>
+                    <svg viewBox="0 0 36 36" className={styles.circularChart} style={{ width: '50px', height: '50px' }}>
+                        <path className={styles.circleBg}
+                            d="M18 2.0845
+                            a 15.9155 15.9155 0 0 1 0 31.831
+                            a 15.9155 15.9155 0 0 1 0 -31.831"
+                            fill="none"
+                            stroke="#eee"
+                            strokeWidth="3.8"
+                        />
+                        <path className={styles.circle}
+                            strokeDasharray={`${totalStats.monthlyCompletionPercentage}, 100`}
+                            d="M18 2.0845
+                            a 15.9155 15.9155 0 0 1 0 31.831
+                            a 15.9155 15.9155 0 0 1 0 -31.831"
+                            fill="none"
+                            stroke="var(--accent-green)"
+                            strokeWidth="3.8"
+                            strokeLinecap="round"
+                        />
+                        {/* Removed text inside small circle to avoid clutter, using tooltip or side text instead */}
+                    </svg>
+                    <span style={{ marginLeft: '0.5rem', fontWeight: 'bold', fontSize: '1.2rem', color: 'var(--accent-green)' }}>
+                        {totalStats.monthlyCompletionPercentage}%
+                    </span>
                 </div>
             </header>
 
-            <div className={styles.tableContainer}>
-                <table className={styles.table}>
-                    <thead>
-                        <tr>
-                            <th className={`${styles.th} ${styles.goalColumn}`}>Goal</th>
-                            {daysInMonth.map((day, index) => (
-                                <th key={index} className={`${styles.th} ${styles.thDay}`}>
-                                    {day.getDate()}
-                                </th>
-                            ))}
-                            <th className={styles.th} style={{ minWidth: '40px' }}></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {currentGoals.length === 0 ? (
-                            <tr>
-                                <td colSpan={daysInMonth.length + 2} className={styles.td} style={{ textAlign: 'center', color: 'var(--fg-secondary)', padding: '2rem' }}>
-                                    No monthly goals yet. Click the button below to add one!
-                                </td>
-                            </tr>
-                        ) : (
-                            currentGoals.map((goal) => (
-                                <tr key={goal.id} className={styles.tr}>
-                                    <td className={`${styles.td} ${styles.goalColumn}`}>
-                                        <DebouncedInput
-                                            value={goal.title}
-                                            onSave={(val) => handleUpdateTitle(goal.id, val)}
-                                            placeholder="Enter goal..."
-                                            className={styles.goalInput}
-                                        />
-                                    </td>
-                                    {daysInMonth.map((day, index) => {
-                                        const dateStr = getISODate(day);
-                                        const isCompleted = goal.completedDays?.[dateStr] || false;
-                                        return (
-                                            <td key={index} className={`${styles.td} ${styles.checkboxCell}`}>
-                                                <div
-                                                    className={`${styles.checkbox} ${isCompleted ? styles.checked : ''}`}
-                                                    onClick={() => toggleDay(goal.id, dateStr)}
-                                                    title={`${day.toLocaleDateString()} - ${isCompleted ? 'Completed' : 'Not completed'}`}
-                                                >
-                                                    {isCompleted && <span className={styles.checkIcon}>✓</span>}
-                                                </div>
+            <div className={styles.dashboardGrid}>
+                {/* Main Tracker Section */}
+                <div className={styles.trackerSection}>
+                    <div className={styles.tableContainer}>
+                        <table className={styles.table}>
+                            <thead>
+                                <tr>
+                                    <th className={`${styles.th} ${styles.goalColumn}`} rowSpan={3} style={{ verticalAlign: 'middle', textAlign: 'center' }}>HABITS</th>
+                                    {weeks.map((week, i) => (
+                                        <th
+                                            key={`week-${i}`}
+                                            colSpan={week.length}
+                                            className={`${styles.th} ${styles[`thWeek${(i % 6) + 1}`]}`}
+                                            style={{ textAlign: 'center', borderBottom: 'none' }}
+                                        >
+                                            Week {i + 1}
+                                        </th>
+                                    ))}
+                                    <th className={styles.th} rowSpan={3}></th>
+                                </tr>
+                                <tr>
+                                    {weeks.map((week, i) => (
+                                        week.map((day, j) => (
+                                            <th
+                                                key={`day-${i}-${j}`}
+                                                className={`${styles.th} ${styles.thDay} ${styles[`thWeek${(i % 6) + 1}`]}`}
+                                                style={{ borderBottom: 'none', fontSize: '0.7rem', color: '#555' }}
+                                            >
+                                                {day.toLocaleDateString('en-US', { weekday: 'short' })}
+                                            </th>
+                                        ))
+                                    ))}
+                                </tr>
+                                <tr>
+                                    {weeks.map((week, i) => (
+                                        week.map((day, j) => (
+                                            <th
+                                                key={`date-${i}-${j}`}
+                                                className={`${styles.th} ${styles.thDay} ${styles[`thWeek${(i % 6) + 1}`]}`}
+                                                style={{ borderTop: 'none', fontWeight: 'bold' }}
+                                            >
+                                                {day.getDate()}
+                                            </th>
+                                        ))
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {currentGoals.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={daysInMonth.length + 2} className={styles.td} style={{ textAlign: 'center', color: 'var(--fg-secondary)', padding: '2rem' }}>
+                                            No monthly goals yet. Click the button below to add one!
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    currentGoals.map((goal) => (
+                                        <tr key={goal.id} className={styles.tr}>
+                                            <td className={`${styles.td} ${styles.goalColumn}`}>
+                                                <DebouncedInput
+                                                    value={goal.title}
+                                                    onSave={(val) => handleUpdateTitle(goal.id, val)}
+                                                    placeholder="Enter goal..."
+                                                    className={styles.goalInput}
+                                                />
                                             </td>
-                                        );
-                                    })}
-                                    <td className={styles.td}>
+                                            {weeks.map((week, weekIndex) => (
+                                                week.map((day, dayIndex) => {
+                                                    const dateStr = getISODate(day);
+                                                    const isCompleted = goal.completedDays?.[dateStr] || false;
+                                                    const weekClass = styles[`week${(weekIndex % 6) + 1}`];
+                                                    // Add separator class to first day of each week (except week 1)
+                                                    const isWeekStart = dayIndex === 0 && weekIndex > 0;
+
+                                                    return (
+                                                        <td
+                                                            key={`${weekIndex}-${dayIndex}`}
+                                                            className={`${styles.td} ${styles.checkboxCell} ${weekClass} ${isWeekStart ? styles.weekSeparator : ''}`}
+                                                        >
+                                                            <div
+                                                                className={`${styles.checkbox} ${isCompleted ? styles.checked : ''}`}
+                                                                onClick={() => toggleDay(goal.id, dateStr)}
+                                                                title={`${day.toLocaleDateString()} - ${isCompleted ? 'Completed' : 'Not completed'}`}
+                                                            >
+                                                                {isCompleted && <span className={styles.checkIcon}>✓</span>}
+                                                            </div>
+                                                        </td>
+                                                    );
+                                                })
+                                            ))}
+                                            <td className={styles.td}>
+                                                <button
+                                                    onClick={() => deleteGoal(goal.id)}
+                                                    className={styles.deleteBtn}
+                                                    title="Delete goal"
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+
+                                {/* Footer Stats */}
+                                {currentGoals.length > 0 && (
+                                    <>
+                                        <tr className={styles.footerRow}>
+                                            <td className={`${styles.td} ${styles.footerLabel}`}>DAILY COMPLETION</td>
+                                            {footerStats.dailyCompletionPercentage.map((pct, i) => (
+                                                <td key={`pct-${i}`}>{pct}%</td>
+                                            ))}
+                                            <td></td>
+                                        </tr>
+                                        <tr className={styles.footerRow}>
+                                            <td className={`${styles.td} ${styles.footerLabel}`}>Daily Completed</td>
+                                            {footerStats.dailyCompletedCount.map((count, i) => (
+                                                <td key={`cnt-${i}`}>{count}</td>
+                                            ))}
+                                            <td></td>
+                                        </tr>
+                                        <tr className={styles.footerRow}>
+                                            <td className={`${styles.td} ${styles.footerLabel}`}>Daily Total</td>
+                                            {footerStats.dailyTotalCount.map((total, i) => (
+                                                <td key={`tot-${i}`}>{total}</td>
+                                            ))}
+                                            <td></td>
+                                        </tr>
+                                    </>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <button onClick={addGoal} className={styles.addGoalBtn}>
+                        <Plus size={20} />
+                        <span>Add Monthly Goal</span>
+                    </button>
+                </div>
+
+                {/* Bottom Section: Progress & Wins */}
+                <div className={styles.bottomSection}>
+                    <div className={styles.progressCard}>
+                        <h3 className={styles.progressTitle}>Monthly Progress</h3>
+                        {currentGoals.length === 0 ? (
+                            <div style={{ color: 'var(--fg-secondary)', fontSize: '0.9rem' }}>
+                                Add goals to track progress
+                            </div>
+                        ) : (
+                            currentGoals.map(goal => {
+                                const progress = calculateProgress(goal);
+                                const completedCount = goal.completedDays ? Object.values(goal.completedDays).filter(Boolean).length : 0;
+                                const total = daysInMonth.length;
+                                return (
+                                    <div key={goal.id} className={styles.progressItem}>
+                                        <div className={styles.progressLabel} style={{ marginBottom: '6px' }}>
+                                            <span
+                                                style={{ flex: 1, marginRight: '24px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 600, fontSize: '0.95rem' }}
+                                                title={goal.title}
+                                            >
+                                                {goal.title || 'Untitled Goal'}
+                                            </span>
+                                            <span className={styles.progressValue} style={{ fontSize: '0.75rem', whiteSpace: 'nowrap', opacity: 0.9 }}>
+                                                {completedCount}/{total} days ({progress}%)
+                                            </span>
+                                        </div>
+                                        <div className={styles.progressBarContainer}>
+                                            <div
+                                                className={styles.progressBarFill}
+                                                style={{ width: `${progress}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
+
+                    <div className={styles.winsCard}>
+                        <div className={styles.winsHeader}>
+                            Wins of the Month So Far
+                        </div>
+                        <ul className={styles.winsList}>
+                            {currentWins.length === 0 ? (
+                                <li className={styles.winItem} style={{ color: 'var(--fg-secondary)', justifyContent: 'center' }}>
+                                    No wins recorded yet
+                                </li>
+                            ) : (
+                                currentWins.map((win) => (
+                                    <li key={win.id} className={styles.winItem}>
+                                        <span style={{ wordBreak: 'break-word', marginRight: '8px' }}>{win.content}</span>
                                         <button
-                                            onClick={() => deleteGoal(goal.id)}
+                                            onClick={() => deleteWin(win.id)}
                                             className={styles.deleteBtn}
-                                            title="Delete goal"
+                                            style={{ opacity: 1, padding: '4px', flexShrink: 0 }}
                                         >
                                             <Trash2 size={14} />
                                         </button>
-                                    </td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
+                                    </li>
+                                ))
+                            )}
+                        </ul>
+                        <WinsInput onAdd={addWin} monthKey={monthKey} />
+                    </div>
+                </div>
             </div>
 
-            <button onClick={addGoal} className={styles.addGoalBtn}>
-                <Plus size={20} />
-                <span>Add Monthly Goal</span>
-            </button>
-        </div>
+        </div >
     );
 }
+
+// Optimized Wins Input Component to prevent typing lag
+const WinsInput = ({ onAdd, monthKey }: { onAdd: (key: string, text: string) => void, monthKey: string }) => {
+    const [localText, setLocalText] = useState('');
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!localText.trim()) return;
+        onAdd(monthKey, localText);
+        setLocalText('');
+    };
+
+    return (
+        <form onSubmit={handleSubmit} className={styles.winInputContainer}>
+            <input
+                type="text"
+                value={localText}
+                onChange={(e) => setLocalText(e.target.value)}
+                placeholder="Add a win..."
+                className={styles.winInput}
+            />
+        </form>
+    );
+};

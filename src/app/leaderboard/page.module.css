@@ -1,7 +1,8 @@
 .container {
-    padding: 2rem;
-    max-width: 800px;
+    padding: var(--space-xl) var(--space-lg);
+    max-width: 900px;
     margin: 0 auto;
+    animation: fadeIn var(--transition-normal);
 }
 
 .header {
@@ -18,17 +19,17 @@
 }
 
 .title {
-    font-size: 2rem;
+    font-size: 2.5rem;
     font-weight: 700;
     margin-bottom: 0.5rem;
-    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: var(--fg-primary);
+    letter-spacing: -0.03em;
+    animation: slideInRight var(--transition-normal);
 }
 
 .subtitle {
-    color: var(--text-secondary);
+    color: var(--fg-secondary);
+    font-weight: 500;
 }
 
 .howItWorksBtn {
@@ -51,6 +52,8 @@
     background: #f59e0b;
     color: white;
     border-color: #f59e0b;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
 }
 
 .tabs {
@@ -61,19 +64,21 @@
 }
 
 .tab {
-    padding: 0.5rem 1.5rem;
-    border-radius: 9999px;
+    padding: 10px 24px;
+    border-radius: var(--radius-full);
     border: none;
     background: var(--bg-secondary);
-    color: var(--text-secondary);
+    color: var(--fg-secondary);
     cursor: pointer;
-    font-weight: 500;
-    transition: all 0.2s;
+    font-weight: 600;
+    transition: all var(--transition-fast);
 }
 
 .tab.active {
     background: #f59e0b;
     color: white;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+    transform: scale(1.02);
 }
 
 /* Date Navigation */
@@ -81,34 +86,36 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 1rem;
-    margin-bottom: 2rem;
+    gap: var(--space-lg);
+    margin-bottom: var(--space-xl);
     background: var(--bg-card);
-    padding: 0.75rem;
-    border-radius: 12px;
+    padding: var(--space-sm);
+    border-radius: var(--radius-lg);
     border: 1px solid var(--border-color);
     width: fit-content;
     margin-left: auto;
     margin-right: auto;
+    box-shadow: var(--shadow-sm);
 }
 
 .navBtn {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-full);
     border: none;
     background: transparent;
-    color: var(--text-secondary);
+    color: var(--fg-secondary);
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all var(--transition-fast);
 }
 
 .navBtn:hover:not(:disabled) {
-    background: var(--bg-secondary);
-    color: var(--text-primary);
+    background: var(--bg-hover);
+    color: var(--fg-primary);
+    transform: scale(1.1);
 }
 
 .navBtn:disabled {
@@ -134,17 +141,20 @@
 .card {
     display: flex;
     align-items: center;
-    padding: 1rem 1.5rem;
+    padding: var(--space-lg);
     background: var(--bg-card);
-    border-radius: 12px;
+    border-radius: var(--radius-lg);
     border: 1px solid var(--border-color);
-    transition: transform 0.2s;
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-fast);
     cursor: pointer;
+    animation: fadeIn var(--transition-normal);
 }
 
 .card:hover {
-    transform: translateY(-2px);
+    transform: translateX(4px);
     border-color: #f59e0b;
+    box-shadow: var(--shadow-md);
 }
 
 .card.currentUser {
@@ -155,7 +165,10 @@
 .rank {
     font-size: 1.5rem;
     font-weight: 700;
-    color: var(--text-secondary);
+    color: var(--fg-secondary);
+    min-width: 50px;
+    text-align: center;
+    font-family: var(--font-mono);
 }
 
 .rank1 {
@@ -190,12 +203,13 @@
 .points {
     font-weight: 700;
     font-size: 1.25rem;
-    color: #f59e0b;
+    color: var(--accent-green);
+    font-family: var(--font-mono);
 }
 
 .pointsLabel {
     font-size: 0.875rem;
-    color: var(--text-secondary);
+    color: var(--fg-secondary);
     margin-left: 0.25rem;
 }
 

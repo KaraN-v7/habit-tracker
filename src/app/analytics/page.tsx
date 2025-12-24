@@ -591,6 +591,7 @@ export default function AnalyticsPage() {
                                         outerRadius={55}
                                         fill="#8884d8"
                                         dataKey="value"
+                                        isAnimationActive={false}
                                     >
                                         {goalCompletionData.map((entry, index) => (
                                             <Cell key={`cell-${index}`} fill={entry.color} />
@@ -613,8 +614,8 @@ export default function AnalyticsPage() {
                                 <YAxis />
                                 <Tooltip />
                                 <Legend />
-                                <Bar dataKey="completed" name="Completed" fill={COLORS.completed} />
-                                <Bar dataKey="total" name="Total" fill={COLORS.pending} />
+                                <Bar dataKey="completed" name="Completed" fill={COLORS.completed} isAnimationActive={false} />
+                                <Bar dataKey="total" name="Total" fill={COLORS.pending} isAnimationActive={false} />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
@@ -636,6 +637,7 @@ export default function AnalyticsPage() {
                                         outerRadius={55}
                                         fill="#8884d8"
                                         dataKey="value"
+                                        isAnimationActive={false}
                                     >
                                         {studyHoursData.map((entry, index) => (
                                             <Cell key={`cell-${index}`} fill={entry.color} />
@@ -658,8 +660,8 @@ export default function AnalyticsPage() {
                                 <YAxis />
                                 <Tooltip />
                                 <Legend />
-                                <Bar dataKey="studyCompleted" name="Completed (h)" fill={COLORS.studyCompleted} />
-                                <Bar dataKey="studyTotal" name="Total (h)" fill={COLORS.studyRemaining} />
+                                <Bar dataKey="studyCompleted" name="Completed (h)" fill={COLORS.studyCompleted} isAnimationActive={false} />
+                                <Bar dataKey="studyTotal" name="Total (h)" fill={COLORS.studyRemaining} isAnimationActive={false} />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
@@ -681,6 +683,7 @@ export default function AnalyticsPage() {
                                         outerRadius={55}
                                         fill="#8884d8"
                                         dataKey="value"
+                                        isAnimationActive={false}
                                     >
                                         {subjectData.map((entry, index) => (
                                             <Cell key={`cell-${index}`} fill={entry.color} />
@@ -710,6 +713,7 @@ export default function AnalyticsPage() {
                                         name={subject}
                                         stackId="a"
                                         fill={subjectColorMap[subject]}
+                                        isAnimationActive={false}
                                     />
                                 ))}
                             </BarChart>
@@ -733,6 +737,7 @@ export default function AnalyticsPage() {
                                         outerRadius={55}
                                         fill="#8884d8"
                                         dataKey="value"
+                                        isAnimationActive={false}
                                     >
                                         {subjectTaskData.map((entry, index) => (
                                             <Cell key={`cell-${index}`} fill={entry.color} />
@@ -762,6 +767,7 @@ export default function AnalyticsPage() {
                                         name={subject}
                                         stackId="a"
                                         fill={subjectColorMap[subject]}
+                                        isAnimationActive={false}
                                     />
                                 ))}
                             </BarChart>

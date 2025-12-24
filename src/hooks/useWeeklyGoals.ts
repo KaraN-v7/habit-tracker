@@ -15,8 +15,9 @@ export interface WeeklyGoalsData {
 export function useWeeklyGoals() {
     const { user } = useAuth();
     const queryClient = useQueryClient();
+    const DEFAULT_DATA: WeeklyGoalsData = {};
 
-    const { data: goals = {}, isLoading: loading, refetch } = useQuery({
+    const { data: goals = DEFAULT_DATA, isLoading: loading, refetch } = useQuery({
         queryKey: ['weeklyGoals', user?.id],
         queryFn: async () => {
             if (!user) return {};

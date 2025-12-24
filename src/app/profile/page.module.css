@@ -1,7 +1,8 @@
 .container {
-    padding: 2rem;
-    max-width: 800px;
+    padding: var(--space-xl) var(--space-lg);
+    max-width: 900px;
     margin: 0 auto;
+    animation: fadeIn var(--transition-normal);
 }
 
 .header {
@@ -9,23 +10,30 @@
 }
 
 .title {
-    font-size: 2rem;
+    font-size: 2.5rem;
     font-weight: 700;
     margin-bottom: 0.5rem;
+    color: var(--fg-primary);
+    letter-spacing: -0.03em;
+    animation: slideInRight var(--transition-normal);
 }
 
 .subtitle {
-    color: var(--text-secondary);
+    color: var(--fg-secondary);
+    font-weight: 500;
 }
 
 .card {
-    background-color: var(--card-bg);
-    border-radius: 16px;
-    border: 1px solid var(--border-color);
-    padding: 2rem;
+    background-color: var(--bg-card);
+    border-radius: var(--radius-lg);
+    border: none;
+    box-shadow: var(--shadow-sm);
+    padding: var(--space-2xl);
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: var(--space-xl);
+    transition: all var(--transition-normal);
+    animation: slideUp var(--transition-slow);
 }
 
 .avatarSection {
@@ -36,11 +44,18 @@
 
 .avatarWrapper {
     position: relative;
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
+    width: 120px;
+    height: 120px;
+    border-radius: var(--radius-full);
     overflow: hidden;
-    border: 2px solid var(--border-color);
+    border: 3px solid var(--accent-blue);
+    box-shadow: 0 8px 24px rgba(59, 130, 246, 0.3);
+    transition: all var(--transition-normal);
+}
+
+.avatarWrapper:hover {
+    transform: scale(1.05);
+    box-shadow: 0 12px 32px rgba(59, 130, 246, 0.4);
 }
 
 .avatar {
@@ -52,13 +67,13 @@
 .avatarPlaceholder {
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-violet));
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2.5rem;
+    font-size: 3rem;
     color: white;
-    font-weight: 600;
+    font-weight: 700;
 }
 
 .uploadButton {
@@ -75,7 +90,9 @@
 }
 
 .uploadButton:hover {
-    background-color: var(--hover-bg);
+    background-color: var(--bg-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
 }
 
 .formGroup {
@@ -86,8 +103,10 @@
 
 .label {
     font-size: 0.9rem;
-    font-weight: 500;
-    color: var(--text-secondary);
+    font-weight: 600;
+    color: var(--fg-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 .input {
@@ -102,23 +121,28 @@
 
 .input:focus {
     outline: none;
-    border-color: #6366f1;
+    border-color: var(--accent-blue);
+    background: var(--bg-card);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .saveButton {
     align-self: flex-start;
-    padding: 0.75rem 2rem;
-    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+    padding: 14px 32px;
+    background: var(--accent-blue);
     color: white;
     border: none;
-    border-radius: 8px;
-    font-weight: 500;
+    border-radius: var(--radius-md);
+    font-weight: 600;
     cursor: pointer;
-    transition: opacity 0.2s;
+    transition: all var(--transition-fast);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
 }
 
 .saveButton:hover {
-    opacity: 0.9;
+    background: #4f46e5;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 .saveButton:disabled {
@@ -140,6 +164,8 @@
 
 .signOutButton:hover {
     background-color: rgba(239, 68, 68, 0.1);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
 }
 
 /* Cropper Modal Styles */

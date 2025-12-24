@@ -232,6 +232,7 @@ export default function SyllabusPage() {
                                 paddingAngle={5}
                                 dataKey="value"
                                 stroke="none"
+                                isAnimationActive={false}
                             >
                                 {pieData.map((entry, index) => (
                                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -322,6 +323,7 @@ export default function SyllabusPage() {
                                                 paddingAngle={0}
                                                 dataKey="value"
                                                 stroke="none"
+                                                isAnimationActive={false}
                                             >
                                                 {subjectPieData.map((entry, index) => (
                                                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
