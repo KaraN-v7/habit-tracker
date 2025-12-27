@@ -43,6 +43,8 @@ export default function LeaderboardPage() {
             newDate.setDate(currentDate.getDate() + (direction === 'next' ? 7 : -7));
         } else if (period === 'monthly') {
             newDate.setMonth(currentDate.getMonth() + (direction === 'next' ? 1 : -1));
+        } else if (period === 'yearly') {
+            newDate.setFullYear(currentDate.getFullYear() + (direction === 'next' ? 1 : -1));
         }
 
         // Prevent future dates
@@ -61,8 +63,12 @@ export default function LeaderboardPage() {
         } else if (period === 'weekly') {
             checkDate.setDate(checkDate.getDate() + 7);
             return checkDate > today;
-        } else {
+        } else if (period === 'monthly') {
             checkDate.setMonth(checkDate.getMonth() + 1);
+            return checkDate > today;
+        } else {
+            // yearly
+            checkDate.setFullYear(checkDate.getFullYear() + 1);
             return checkDate > today;
         }
     };
@@ -78,8 +84,11 @@ export default function LeaderboardPage() {
             const end = new Date(start);
             end.setDate(start.getDate() + 6);
             return `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
-        } else {
+        } else if (period === 'monthly') {
             return currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        } else {
+            // yearly
+            return currentDate.getFullYear().toString();
         }
     };
 
@@ -172,19 +181,25 @@ export default function LeaderboardPage() {
                     className={`${styles.tab} ${period === 'daily' ? styles.active : ''}`}
                     onClick={() => setPeriod('daily')}
                 >
-                    Daily
+                    Today
                 </button>
                 <button
                     className={`${styles.tab} ${period === 'weekly' ? styles.active : ''}`}
                     onClick={() => setPeriod('weekly')}
                 >
-                    Weekly
+                    Week
                 </button>
                 <button
                     className={`${styles.tab} ${period === 'monthly' ? styles.active : ''}`}
                     onClick={() => setPeriod('monthly')}
                 >
-                    Monthly
+                    Month
+                </button>
+                <button
+                    className={`${styles.tab} ${period === 'yearly' ? styles.active : ''}`}
+                    onClick={() => setPeriod('yearly')}
+                >
+                    Year
                 </button>
             </div>
 

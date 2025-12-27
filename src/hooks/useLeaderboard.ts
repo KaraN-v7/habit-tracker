@@ -21,7 +21,7 @@ export interface UserDetails {
     syllabus_percentage: number;
 }
 
-export type Period = 'daily' | 'weekly' | 'monthly';
+export type Period = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
 export function useLeaderboard() {
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -60,6 +60,12 @@ export function useLeaderboard() {
 
             end.setMonth(start.getMonth() + 1);
             end.setDate(0); // Last day of previous month (which is current month)
+            end.setHours(23, 59, 59, 999);
+        } else if (type === 'yearly') {
+            start.setMonth(0, 1); // January 1st
+            start.setHours(0, 0, 0, 0);
+
+            end.setMonth(11, 31); // December 31st
             end.setHours(23, 59, 59, 999);
         }
 

@@ -24,7 +24,7 @@ interface TrendDataPoint {
     [key: string]: any; // For dynamic subject keys
 }
 
-type ViewType = 'daily' | 'weekly' | 'monthly';
+type ViewType = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
 export default function AnalyticsPage() {
     const [viewType, setViewType] = useState<ViewType>('daily');
@@ -110,6 +110,18 @@ export default function AnalyticsPage() {
         const d = new Date(year, month, 1);
 
         while (d.getMonth() === month) {
+            days.push(new Date(d));
+            d.setDate(d.getDate() + 1);
+        }
+        return days;
+    };
+
+    const getDaysOfYear = (date: Date) => {
+        const days = [];
+        const year = date.getFullYear();
+        const d = new Date(year, 0, 1); // January 1st
+
+        while (d.getFullYear() === year) {
             days.push(new Date(d));
             d.setDate(d.getDate() + 1);
         }
@@ -427,6 +439,122 @@ export default function AnalyticsPage() {
                     }
                 }
             });
+        } else if (type === 'yearly') {
+            const yearDays = getDaysOfYear(date);
+
+            // 1. Daily Goals (aggregated for the year)
+            yearDays.forEach(day => {
+                const dateKey = getDateKey(day);
+                const dayGoals = allGoals.daily[dateKey] || [];
+                dayGoals.forEach((goal: any) => {
+                    if (goal.type === 'todo' && (!goal.source || goal.source === 'daily')) {
+                        total++;
+                        if (goal.completed) completed++;
+
+                        const subject = extractSubject(goal.content);
+                        if (subject) {
+                            if (!subjectTasks[subject]) subjectTasks[subject] = { total: 0, completed: 0 };
+                            subjectTasks[subject].total++;
+                            if (goal.completed) subjectTasks[subject].completed++;
+                        }
+
+                        if (isStudyRelated(goal)) {
+                            const hours = extractStudyHours(goal.content);
+                            if (hours > 0) {
+                                studyHoursTotal += hours;
+                                if (goal.completed) studyHoursCompleted += hours;
+                                if (subject && goal.completed) {
+                                    subjectHours[subject] = (subjectHours[subject] || 0) + hours;
+                                }
+                            }
+                        }
+                    }
+                });
+            });
+
+            // 2. Weekly Goals (aggregated for the year)
+            const processedWeeks = new Set<string>();
+            yearDays.forEach(day => {
+                const weekStart = getWeekStart(day);
+                const weekKey = getDateKey(weekStart);
+
+                if (!processedWeeks.has(weekKey)) {
+                    processedWeeks.add(weekKey);
+                    const weekGoals = allGoals.weekly[weekKey] || [];
+
+                    weekGoals.forEach((goal: any) => {
+                        if (goal.title && (!goal.source || goal.source === 'weekly')) {
+                            const weekDays = getDaysOfWeek(weekStart);
+                            const daysInYear = weekDays.filter(d => d.getFullYear() === date.getFullYear());
+
+                            const completedDays = daysInYear.filter(d => {
+                                const dateKey = getDateKey(d);
+                                return goal.completedDays?.[dateKey];
+                            }).length;
+
+                            total += daysInYear.length;
+                            completed += completedDays;
+
+                            const subject = extractSubject(goal.title);
+                            if (subject) {
+                                if (!subjectTasks[subject]) subjectTasks[subject] = { total: 0, completed: 0 };
+                                subjectTasks[subject].total += daysInYear.length;
+                                subjectTasks[subject].completed += completedDays;
+                            }
+
+                            if (isStudyRelated(goal)) {
+                                const hours = extractStudyHours(goal.title);
+                                if (hours > 0) {
+                                    studyHoursTotal += hours * daysInYear.length;
+                                    studyHoursCompleted += hours * completedDays;
+                                    if (subject) {
+                                        subjectHours[subject] = (subjectHours[subject] || 0) + (hours * completedDays);
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            });
+
+            // 3. Monthly Goals (aggregated for the year)
+            const year = date.getFullYear();
+            for (let month = 0; month < 12; month++) {
+                const monthKey = `${year}-${month}`;
+                const monthGoals = allGoals.monthly[monthKey] || [];
+                const monthDate = new Date(year, month, 1);
+                const monthDays = getDaysOfMonth(monthDate);
+
+                monthGoals.forEach((goal: any) => {
+                    if (goal.title) {
+                        const completedDays = monthDays.filter(day => {
+                            const dateKey = getDateKey(day);
+                            return goal.completedDays?.[dateKey];
+                        }).length;
+
+                        total += monthDays.length;
+                        completed += completedDays;
+
+                        const subject = extractSubject(goal.title);
+                        if (subject) {
+                            if (!subjectTasks[subject]) subjectTasks[subject] = { total: 0, completed: 0 };
+                            subjectTasks[subject].total += monthDays.length;
+                            subjectTasks[subject].completed += completedDays;
+                        }
+
+                        if (isStudyRelated(goal)) {
+                            const hours = extractStudyHours(goal.title);
+                            if (hours > 0) {
+                                studyHoursTotal += hours * monthDays.length;
+                                studyHoursCompleted += hours * completedDays;
+                                if (subject) {
+                                    subjectHours[subject] = (subjectHours[subject] || 0) + (hours * completedDays);
+                                }
+                            }
+                        }
+                    }
+                });
+            }
         }
 
         return { completed, total, studyHoursCompleted, studyHoursTotal, subjectHours, subjectTasks };
@@ -460,9 +588,13 @@ export default function AnalyticsPage() {
                 date.setDate(today.getDate() - (i * 7));
                 label = `Week -${i}`;
                 if (i === 0) label = 'This Week';
-            } else {
+            } else if (viewType === 'monthly') {
                 date.setMonth(today.getMonth() - i);
                 label = date.toLocaleDateString('en-US', { month: 'short' });
+            } else {
+                // yearly
+                date.setFullYear(today.getFullYear() - i);
+                label = date.getFullYear().toString();
             }
 
             const periodStats = getStatsForPeriod(date, viewType, allGoals);
@@ -510,13 +642,13 @@ export default function AnalyticsPage() {
     }, [viewType, dailyGoals, weeklyGoals, monthlyGoals, dailyLoading, weeklyLoading, monthlyLoading, subjectLoading]);
 
     const goalCompletionData = [
-        { name: 'Completed', value: stats.completed, color: '#27ae60' },
-        { name: 'Pending', value: stats.total - stats.completed, color: '#e74c3c' }
+        { name: 'Completed', value: stats.completed, color: 'hsl(142, 76%, 36%)' },
+        { name: 'Pending', value: stats.total - stats.completed, color: 'hsl(354, 70%, 54%)' }
     ];
 
     const studyHoursData = [
-        { name: 'Completed', value: stats.studyHoursCompleted, color: '#3498db' },
-        { name: 'Remaining', value: stats.studyHoursTotal - stats.studyHoursCompleted, color: '#95a5a6' }
+        { name: 'Completed', value: stats.studyHoursCompleted, color: 'hsl(221, 83%, 53%)' },
+        { name: 'Remaining', value: stats.studyHoursTotal - stats.studyHoursCompleted, color: 'hsl(215, 16%, 47%)' }
     ];
 
     const subjectData = Object.entries(subjectDistribution).map(([subject, hours]) => ({
@@ -542,10 +674,10 @@ export default function AnalyticsPage() {
     });
 
     const COLORS = {
-        completed: '#27ae60',
-        pending: '#e74c3c',
-        studyCompleted: '#3498db',
-        studyRemaining: '#95a5a6'
+        completed: 'hsl(142, 76%, 36%)',        // Modern green
+        pending: 'hsl(354, 70%, 54%)',          // Soft red
+        studyCompleted: 'hsl(221, 83%, 53%)',   // Vibrant blue
+        studyRemaining: 'hsl(215, 16%, 47%)'    // Muted gray-blue
     };
 
     return (
@@ -557,19 +689,25 @@ export default function AnalyticsPage() {
                         className={`${styles.viewButton} ${viewType === 'daily' ? styles.active : ''}`}
                         onClick={() => setViewType('daily')}
                     >
-                        Daily
+                        Today
                     </button>
                     <button
                         className={`${styles.viewButton} ${viewType === 'weekly' ? styles.active : ''}`}
                         onClick={() => setViewType('weekly')}
                     >
-                        Weekly
+                        Week
                     </button>
                     <button
                         className={`${styles.viewButton} ${viewType === 'monthly' ? styles.active : ''}`}
                         onClick={() => setViewType('monthly')}
                     >
-                        Monthly
+                        Month
+                    </button>
+                    <button
+                        className={`${styles.viewButton} ${viewType === 'yearly' ? styles.active : ''}`}
+                        onClick={() => setViewType('yearly')}
+                    >
+                        Year
                     </button>
                 </div>
             </header>
@@ -581,23 +719,36 @@ export default function AnalyticsPage() {
                     <div className={styles.chartWrapper}>
                         {stats.total > 0 ? (
                             <ResponsiveContainer width="100%" height={300}>
-                                <PieChart>
+                                <PieChart margin={{ top: 20, bottom: 20, left: 0, right: 0 }}>
                                     <Pie
                                         data={goalCompletionData}
                                         cx="50%"
                                         cy="50%"
-                                        labelLine={false}
+                                        labelLine={true}
                                         label={({ name, value }) => `${name}: ${value}`}
-                                        outerRadius={55}
+                                        outerRadius={70}
+                                        innerRadius={50}
                                         fill="#8884d8"
                                         dataKey="value"
-                                        isAnimationActive={false}
+                                        isAnimationActive={true}
+                                        animationDuration={800}
+                                        animationBegin={0}
+                                        paddingAngle={2}
                                     >
                                         {goalCompletionData.map((entry, index) => (
                                             <Cell key={`cell-${index}`} fill={entry.color} />
                                         ))}
                                     </Pie>
-                                    <Tooltip />
+                                    <Tooltip
+                                        wrapperStyle={{ zIndex: 1000 }}
+                                        contentStyle={{
+                                            background: 'var(--bg-card)',
+                                            border: '1px solid var(--border-color)',
+                                            borderRadius: '8px',
+                                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                                        }}
+                                        itemStyle={{ color: 'var(--fg-primary)' }}
+                                    />
                                     <Legend />
                                 </PieChart>
                             </ResponsiveContainer>
@@ -608,14 +759,24 @@ export default function AnalyticsPage() {
                     <div className={styles.chartWrapper} style={{ marginTop: '2rem', height: '200px' }}>
                         <h3 className={styles.chartSubtitle}>Trend</h3>
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={trendData}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="name" />
-                                <YAxis />
-                                <Tooltip />
+                            <BarChart data={trendData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" opacity={0.3} />
+                                <XAxis dataKey="name" stroke="var(--fg-secondary)" />
+                                <YAxis stroke="var(--fg-secondary)" />
+                                <Tooltip
+                                    cursor={{ fill: 'var(--bg-hover)' }}
+                                    wrapperStyle={{ zIndex: 1000 }}
+                                    contentStyle={{
+                                        background: 'var(--bg-card)',
+                                        border: '1px solid var(--border-color)',
+                                        borderRadius: '8px',
+                                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                                    }}
+                                    itemStyle={{ color: 'var(--fg-primary)' }}
+                                />
                                 <Legend />
-                                <Bar dataKey="completed" name="Completed" fill={COLORS.completed} isAnimationActive={false} />
-                                <Bar dataKey="total" name="Total" fill={COLORS.pending} isAnimationActive={false} />
+                                <Bar dataKey="completed" name="Completed" fill={COLORS.completed} isAnimationActive={true} animationDuration={800} radius={[8, 8, 0, 0]} />
+                                <Bar dataKey="total" name="Total" fill={COLORS.pending} isAnimationActive={true} animationDuration={800} radius={[8, 8, 0, 0]} />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
@@ -627,23 +788,37 @@ export default function AnalyticsPage() {
                     <div className={styles.chartWrapper}>
                         {stats.studyHoursTotal > 0 ? (
                             <ResponsiveContainer width="100%" height={300}>
-                                <PieChart>
+                                <PieChart margin={{ top: 20, bottom: 20, left: 0, right: 0 }}>
                                     <Pie
                                         data={studyHoursData}
                                         cx="50%"
                                         cy="50%"
-                                        labelLine={false}
+                                        labelLine={true}
                                         label={({ name, value }) => `${name}: ${value.toFixed(1)}h`}
-                                        outerRadius={55}
+                                        outerRadius={70}
+                                        innerRadius={50}
                                         fill="#8884d8"
                                         dataKey="value"
-                                        isAnimationActive={false}
+                                        isAnimationActive={true}
+                                        animationDuration={800}
+                                        animationBegin={0}
+                                        paddingAngle={2}
                                     >
                                         {studyHoursData.map((entry, index) => (
                                             <Cell key={`cell-${index}`} fill={entry.color} />
                                         ))}
                                     </Pie>
-                                    <Tooltip formatter={(value: number) => `${value.toFixed(1)} hours`} />
+                                    <Tooltip
+                                        formatter={(value: number) => `${value.toFixed(1)} hours`}
+                                        wrapperStyle={{ zIndex: 1000 }}
+                                        contentStyle={{
+                                            background: 'var(--bg-card)',
+                                            border: '1px solid var(--border-color)',
+                                            borderRadius: '8px',
+                                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                                        }}
+                                        itemStyle={{ color: 'var(--fg-primary)' }}
+                                    />
                                     <Legend />
                                 </PieChart>
                             </ResponsiveContainer>
@@ -654,14 +829,24 @@ export default function AnalyticsPage() {
                     <div className={styles.chartWrapper} style={{ marginTop: '2rem', height: '200px' }}>
                         <h3 className={styles.chartSubtitle}>Trend</h3>
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={trendData}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="name" />
-                                <YAxis />
-                                <Tooltip />
+                            <BarChart data={trendData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" opacity={0.3} />
+                                <XAxis dataKey="name" stroke="var(--fg-secondary)" />
+                                <YAxis stroke="var(--fg-secondary)" />
+                                <Tooltip
+                                    cursor={{ fill: 'var(--bg-hover)' }}
+                                    wrapperStyle={{ zIndex: 1000 }}
+                                    contentStyle={{
+                                        background: 'var(--bg-card)',
+                                        border: '1px solid var(--border-color)',
+                                        borderRadius: '8px',
+                                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                                    }}
+                                    itemStyle={{ color: 'var(--fg-primary)' }}
+                                />
                                 <Legend />
-                                <Bar dataKey="studyCompleted" name="Completed (h)" fill={COLORS.studyCompleted} isAnimationActive={false} />
-                                <Bar dataKey="studyTotal" name="Total (h)" fill={COLORS.studyRemaining} isAnimationActive={false} />
+                                <Bar dataKey="studyCompleted" name="Completed (h)" fill={COLORS.studyCompleted} isAnimationActive={true} animationDuration={800} radius={[8, 8, 0, 0]} />
+                                <Bar dataKey="studyTotal" name="Total (h)" fill={COLORS.studyRemaining} isAnimationActive={true} animationDuration={800} radius={[8, 8, 0, 0]} />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
@@ -673,23 +858,37 @@ export default function AnalyticsPage() {
                     <div className={styles.chartWrapper}>
                         {subjectData.length > 0 ? (
                             <ResponsiveContainer width="100%" height={300}>
-                                <PieChart>
+                                <PieChart margin={{ top: 20, bottom: 20, left: 0, right: 0 }}>
                                     <Pie
                                         data={subjectData}
                                         cx="50%"
                                         cy="50%"
-                                        labelLine={false}
+                                        labelLine={true}
                                         label={({ name, value }) => value > 0 ? `${name}: ${value.toFixed(1)}h` : ''}
-                                        outerRadius={55}
+                                        outerRadius={70}
+                                        innerRadius={50}
                                         fill="#8884d8"
                                         dataKey="value"
-                                        isAnimationActive={false}
+                                        isAnimationActive={true}
+                                        animationDuration={800}
+                                        animationBegin={0}
+                                        paddingAngle={2}
                                     >
                                         {subjectData.map((entry, index) => (
                                             <Cell key={`cell-${index}`} fill={entry.color} />
                                         ))}
                                     </Pie>
-                                    <Tooltip formatter={(value: number) => `${value.toFixed(1)} hours`} />
+                                    <Tooltip
+                                        formatter={(value: number) => `${value.toFixed(1)} hours`}
+                                        wrapperStyle={{ zIndex: 1000 }}
+                                        contentStyle={{
+                                            background: 'var(--bg-card)',
+                                            border: '1px solid var(--border-color)',
+                                            borderRadius: '8px',
+                                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                                        }}
+                                        itemStyle={{ color: 'var(--fg-primary)' }}
+                                    />
                                     <Legend />
                                 </PieChart>
                             </ResponsiveContainer>
@@ -700,11 +899,21 @@ export default function AnalyticsPage() {
                     <div className={styles.chartWrapper} style={{ marginTop: '2rem', height: '200px' }}>
                         <h3 className={styles.chartSubtitle}>Trend</h3>
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={trendData}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="name" />
-                                <YAxis />
-                                <Tooltip />
+                            <BarChart data={trendData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" opacity={0.3} />
+                                <XAxis dataKey="name" stroke="var(--fg-secondary)" />
+                                <YAxis stroke="var(--fg-secondary)" />
+                                <Tooltip
+                                    cursor={{ fill: 'var(--bg-hover)' }}
+                                    wrapperStyle={{ zIndex: 1000 }}
+                                    contentStyle={{
+                                        background: 'var(--bg-card)',
+                                        border: '1px solid var(--border-color)',
+                                        borderRadius: '8px',
+                                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                                    }}
+                                    itemStyle={{ color: 'var(--fg-primary)' }}
+                                />
                                 <Legend />
                                 {allSubjects.map((subject, index) => (
                                     <Bar
@@ -713,7 +922,9 @@ export default function AnalyticsPage() {
                                         name={subject}
                                         stackId="a"
                                         fill={subjectColorMap[subject]}
-                                        isAnimationActive={false}
+                                        isAnimationActive={true}
+                                        animationDuration={800}
+                                        radius={index === allSubjects.length - 1 ? [8, 8, 0, 0] : [0, 0, 0, 0]}
                                     />
                                 ))}
                             </BarChart>
@@ -727,23 +938,37 @@ export default function AnalyticsPage() {
                     <div className={styles.chartWrapper}>
                         {subjectTaskData.length > 0 ? (
                             <ResponsiveContainer width="100%" height={300}>
-                                <PieChart>
+                                <PieChart margin={{ top: 20, bottom: 20, left: 0, right: 0 }}>
                                     <Pie
                                         data={subjectTaskData}
                                         cx="50%"
                                         cy="50%"
-                                        labelLine={false}
+                                        labelLine={true}
                                         label={({ name, value }) => value > 0 ? `${name}: ${value}` : ''}
-                                        outerRadius={55}
+                                        outerRadius={70}
+                                        innerRadius={50}
                                         fill="#8884d8"
                                         dataKey="value"
-                                        isAnimationActive={false}
+                                        isAnimationActive={true}
+                                        animationDuration={800}
+                                        animationBegin={0}
+                                        paddingAngle={2}
                                     >
                                         {subjectTaskData.map((entry, index) => (
                                             <Cell key={`cell-${index}`} fill={entry.color} />
                                         ))}
                                     </Pie>
-                                    <Tooltip formatter={(value: number, name: string, props: any) => [`${value} / ${props.payload.total} completed`, name]} />
+                                    <Tooltip
+                                        formatter={(value: number, name: string, props: any) => [`${value} / ${props.payload.total} completed`, name]}
+                                        wrapperStyle={{ zIndex: 1000 }}
+                                        contentStyle={{
+                                            background: 'var(--bg-card)',
+                                            border: '1px solid var(--border-color)',
+                                            borderRadius: '8px',
+                                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                                        }}
+                                        itemStyle={{ color: 'var(--fg-primary)' }}
+                                    />
                                     <Legend />
                                 </PieChart>
                             </ResponsiveContainer>
@@ -754,11 +979,21 @@ export default function AnalyticsPage() {
                     <div className={styles.chartWrapper} style={{ marginTop: '2rem', height: '200px' }}>
                         <h3 className={styles.chartSubtitle}>Trend</h3>
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={trendData}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="name" />
-                                <YAxis />
-                                <Tooltip />
+                            <BarChart data={trendData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" opacity={0.3} />
+                                <XAxis dataKey="name" stroke="var(--fg-secondary)" />
+                                <YAxis stroke="var(--fg-secondary)" />
+                                <Tooltip
+                                    cursor={{ fill: 'var(--bg-hover)' }}
+                                    wrapperStyle={{ zIndex: 1000 }}
+                                    contentStyle={{
+                                        background: 'var(--bg-card)',
+                                        border: '1px solid var(--border-color)',
+                                        borderRadius: '8px',
+                                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                                    }}
+                                    itemStyle={{ color: 'var(--fg-primary)' }}
+                                />
                                 <Legend />
                                 {allSubjects.map((subject, index) => (
                                     <Bar
@@ -767,7 +1002,9 @@ export default function AnalyticsPage() {
                                         name={subject}
                                         stackId="a"
                                         fill={subjectColorMap[subject]}
-                                        isAnimationActive={false}
+                                        isAnimationActive={true}
+                                        animationDuration={800}
+                                        radius={index === allSubjects.length - 1 ? [8, 8, 0, 0] : [0, 0, 0, 0]}
                                     />
                                 ))}
                             </BarChart>

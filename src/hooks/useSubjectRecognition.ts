@@ -105,6 +105,7 @@ export function useSubjectRecognition() {
     /**
      * Helper function to find the best matching subject
      * Prefers longer matches (e.g., "computer science" over "computer")
+     * Uses word boundary matching to avoid false positives (e.g., "Epics" won't match "cs")
      */
     const findSubjectMatch = (text: string): SubjectRecognitionResult => {
         const lowerText = text.toLowerCase();
@@ -115,7 +116,12 @@ export function useSubjectRecognition() {
         );
 
         for (const variation of sortedVariations) {
-            if (lowerText.includes(variation.variation.toLowerCase())) {
+            // Use word boundary regex to match complete words only
+            // \b matches word boundaries (start/end of word)
+            const escapedVariation = variation.variation.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regex = new RegExp(`\\b${escapedVariation}\\b`, 'i');
+
+            if (regex.test(lowerText)) {
                 const subject = subjects.find(s => s.id === variation.subject_id);
                 if (subject) {
                     return {
