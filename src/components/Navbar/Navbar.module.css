@@ -34,35 +34,11 @@
 }
 
 .nav {
-    display: flex;
-    align-items: center;
-    gap: var(--space-sm);
+    display: none;
 }
 
-.navItem {
-    display: flex;
-    align-items: center;
-    gap: var(--space-xs);
-    padding: 8px 12px;
-    border-radius: var(--radius-md);
-    color: var(--fg-secondary);
-    text-decoration: none;
-    transition: all var(--transition-fast);
-    font-size: 0.9375rem;
-    font-weight: 500;
-    white-space: nowrap;
-}
-
-.navItem:hover {
-    background-color: var(--bg-hover);
-    color: var(--fg-primary);
-}
-
-.active {
-    background-color: var(--bg-card);
-    color: var(--fg-primary);
-    font-weight: 600;
-    box-shadow: var(--shadow-sm);
+.mobileMenuButton {
+    display: none;
 }
 
 .rightSection {
@@ -126,29 +102,28 @@
     text-overflow: ellipsis;
 }
 
-.mobileMenuButton {
-    display: none;
-    background: none;
-    border: none;
-    color: var(--fg-primary);
-    cursor: pointer;
-    padding: 4px;
+/* Hide Logo on Desktop since Sidebar has it */
+@media (min-width: 1025px) {
+    .logoWrapper {
+        display: none;
+    }
+
+    .leftSection {
+        gap: 0;
+    }
 }
 
 /* Mobile Responsive */
 @media (max-width: 1024px) {
-    .nav {
-        display: none;
-    }
-
-    .mobileMenuButton {
-        display: block;
+    .logoWrapper {
+        display: flex;
     }
 
     .userName {
         display: none;
     }
 }
+
 
 .mobileMenu {
     position: fixed;
@@ -192,4 +167,11 @@
     background-color: var(--bg-card);
     color: var(--fg-primary);
     font-weight: 600;
+}
+
+/* HIDE NAVBAR COMPLETELY ON DESKTOP (Sidebar replaces it) */
+@media (min-width: 1025px) {
+    .navbar {
+        display: none;
+    }
 }

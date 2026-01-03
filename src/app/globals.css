@@ -271,18 +271,38 @@ button {
 /* Layout */
 .app-layout {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  /* Sidebar | Content */
   height: 100vh;
   overflow: hidden;
   position: relative;
 }
 
-.main-scroll {
-  height: 100%;
-  overflow-y: auto;
-  scroll-behavior: smooth;
-  padding: var(--space-xl);
+.main-wrapper {
+  display: flex;
+  flex-direction: column;
   flex: 1;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  width: 100%;
+  position: relative;
+  padding: var(--space-lg);
+}
+
+@media (max-width: 1024px) {
+  .main-content {
+    padding-bottom: 80px !important;
+    /* Visual space for Bottom Nav */
+    padding-left: var(--space-md);
+    padding-right: var(--space-md);
+  }
 }
 
 /* Cards */

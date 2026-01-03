@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import ThemeToggle from '../ThemeToggle/ThemeToggle';
@@ -8,27 +8,26 @@ import Logo from '../Logo/Logo';
 import styles from './Sidebar.module.css';
 import {
     Home,
-    CheckSquare,
     BookOpen,
     BarChart2,
-    Settings,
     Calendar,
     CalendarRange,
     Trophy,
+    ChevronLeft,
+    ChevronRight,
+    Settings,
+    LogOut,
     Star
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useLeaderboard } from '@/hooks/useLeaderboard';
 
-// Props for mobile toggle
-interface SidebarProps {
-    open?: boolean;
-}
-
-const Sidebar: React.FC<SidebarProps> = React.memo(({ open = false }) => {
+const Sidebar: React.FC = () => {
     const pathname = usePathname();
     const { user } = useAuth();
     const { userPoints } = useLeaderboard();
+    // Default to expanded on desktop, could be persisted in local storage
+    const [isCollapsed, setIsCollapsed] = useState(false);
 
     const displayName = useMemo(() =>
         user?.user_metadata?.custom_full_name ||
@@ -46,74 +45,91 @@ const Sidebar: React.FC<SidebarProps> = React.memo(({ open = false }) => {
         [displayName]);
 
     const navItems = useMemo(() => [
-        { name: 'Daily Goal', href: '/', icon: Home },
-        { name: 'Weekly Goals', href: '/weekly', icon: Calendar },
-        { name: 'Monthly Goals', href: '/monthly', icon: CalendarRange },
+        { name: 'Daily', href: '/', icon: Home },
+        { name: 'Weekly', href: '/weekly', icon: Calendar },
+        { name: 'Monthly', href: '/monthly', icon: CalendarRange },
         { name: 'Syllabus', href: '/syllabus', icon: BookOpen },
         { name: 'Analytics', href: '/analytics', icon: BarChart2 },
         { name: 'Leaderboard', href: '/leaderboard', icon: Trophy },
     ], []);
 
     return (
-        <aside className={`${styles.sidebar} ${open ? styles.open : ''}`}>
-            <div className={styles.logo}>
-                <Logo size="medium" />
+        <aside className={`${styles.sidebar} ${isCollapsed ? styles.collapsed : styles.expanded}`}>
+            <div className={styles.header}>
+                <div className={styles.logoWrapper}>
+                    <Logo size="small" />
+                </div>
+                {/* Fallback logo for collapsed state */}
+                <div className={styles.collapsedLogo}>
+                    Ā
+                </div>
+
+                <button
+                    className={styles.toggleBtn}
+                    onClick={() => setIsCollapsed(!isCollapsed)}
+                    aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                >
+                    {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+                </button>
             </div>
 
             <nav className={styles.nav}>
                 {navItems.map((item) => {
                     const Icon = item.icon;
-                    const isActive = pathname === item.href;
+                    const isActive = item.href === '/'
+                        ? pathname === '/'
+                        : pathname.startsWith(item.href);
+
                     return (
                         <Link
                             key={item.name}
                             href={item.href}
                             className={`${styles.navItem} ${isActive ? styles.active : ''}`}
+                            title={isCollapsed ? item.name : ''}
                         >
-                            <Icon size={18} className={styles.icon} />
-                            {item.name}
+                            <Icon size={20} />
+                            <span className={styles.linkText}>{item.name}</span>
                         </Link>
                     );
                 })}
             </nav>
 
-            <div className={styles.sidebarFooter}>
-                <div style={{
-                    padding: '0.5rem',
-                    marginBottom: '0.5rem',
-                    background: 'rgba(255, 215, 0, 0.1)',
-                    borderRadius: '8px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    color: '#f59e0b',
-                    fontWeight: 600,
-                    fontSize: '0.875rem'
-                }}>
-                    <Star size={16} fill="#f59e0b" />
-                    <span>{userPoints || 0} Points</span>
+            <div className={styles.footer}>
+                {/* Points Display */}
+                <div className={`${styles.pointsBadge} ${isCollapsed ? styles.pointsCollapsed : ''}`}>
+                    <Star size={16} fill="#f59e0b" className={styles.starIcon} />
+                    <span className={styles.pointsText}>{userPoints || 0} Points</span>
                 </div>
-                <Link href="/profile" className={styles.userProfile} style={{ textDecoration: 'none', color: 'inherit' }}>
+
+                {!isCollapsed && (
+                    <div style={{ padding: '0 4px', marginBottom: '8px' }}>
+                        <ThemeToggle />
+                    </div>
+                )}
+                {/* In collapsed mode, ThemeToggle might be tricky layout-wise, can hide or just show icon if customized. 
+                    For now simplifying by hiding or placing it differently if needed. 
+                    Let's just hide text in ThemeToggle if it has any, currently it's usually an icon button. 
+                */}
+
+                <Link href="/profile" className={styles.userProfile}>
                     {avatarUrl ? (
                         <img
                             src={avatarUrl}
                             alt={displayName}
                             className={styles.userAvatar}
-                            style={{ objectFit: 'cover', backgroundColor: 'transparent' }}
+                            style={{ objectFit: 'cover' }}
                         />
                     ) : (
                         <div className={styles.userAvatar}>{initial}</div>
                     )}
-                    <span className="text-sm" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>
-                        {displayName}
-                    </span>
+                    <div className={styles.userDetails}>
+                        <span className={styles.userName}>{displayName}</span>
+                        <span className={styles.userEmail}>{user?.email}</span>
+                    </div>
                 </Link>
-                <ThemeToggle />
             </div>
         </aside>
     );
-});
-
-Sidebar.displayName = 'Sidebar';
+};
 
 export default Sidebar;

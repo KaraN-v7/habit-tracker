@@ -2,6 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import Navbar from '@/components/Navbar/Navbar';
+import Sidebar from '@/components/Sidebar/Sidebar';
+import BottomNav from '@/components/BottomNav/BottomNav';
 import { useAuth } from '@/context/AuthContext';
 import { usePathname, useRouter } from 'next/navigation';
 
@@ -62,11 +64,15 @@ export default function AppContent({ children }: { children: React.ReactNode }) 
     }
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
-            <Navbar />
-            <main className="main-content" style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', width: '100%', position: 'relative' }}>
-                {children}
-            </main>
+        <div className="app-layout">
+            <Sidebar />
+            <div className="main-wrapper">
+                <Navbar />
+                <main className="main-content">
+                    {children}
+                </main>
+                <BottomNav />
+            </div>
         </div>
     );
 }
