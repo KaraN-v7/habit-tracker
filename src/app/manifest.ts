@@ -5,23 +5,24 @@ export default function manifest(): MetadataRoute.Manifest {
         name: 'Ābhyāsa',
         short_name: 'Ābhyāsa',
         description: 'Track your habits and syllabus progress',
-        start_url: '/',
+        id: '/?mode=pwa',
+        start_url: '/?mode=pwa',
         display: 'standalone',
         background_color: '#ffffff',
         theme_color: '#000000',
         icons: [
             {
-                src: '/app-icon-final.png',
+                src: '/force-icon-v5.png',
                 sizes: '192x192',
                 type: 'image/png',
             },
             {
-                src: '/app-icon-final.png',
+                src: '/force-icon-v5.png',
                 sizes: '512x512',
                 type: 'image/png',
             },
             {
-                src: '/app-icon-final.png',
+                src: '/force-icon-v5.png',
                 sizes: '512x512',
                 type: 'image/png',
                 purpose: 'maskable'
