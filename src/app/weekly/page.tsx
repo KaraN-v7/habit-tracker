@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import styles from './page.module.css';
 import { ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-react';
 import { useWeeklyGoals } from '@/hooks/useWeeklyGoals';
-import { useMonthlyGoals } from '@/hooks/useMonthlyGoals';
+import Snackbar from '@/components/Snackbar/Snackbar';
 
 // Debounced Input Component
 const DebouncedInput = ({
@@ -112,7 +112,10 @@ export default function WeeklyPage() {
 
     // Hooks moved back here
     const { goals, loading, saveGoals, updateGoalCompletion, updateGoalTitle, user } = useWeeklyGoals();
-    const { goals: monthlyGoals, loading: monthlyLoading, updateGoalCompletion: updateMonthlyCompletion } = useMonthlyGoals();
+
+    // Undo State
+    const [undoBackup, setUndoBackup] = useState<any[] | null>(null);
+    const [showSnackbar, setShowSnackbar] = useState(false);
 
     const changeWeek = (weeks: number) => {
         const newDate = new Date(currentWeekStart);
@@ -143,38 +146,14 @@ export default function WeeklyPage() {
         localStorage.setItem('hiddenWeeklyGoals', JSON.stringify(hiddenGoals));
     }, [hiddenGoals]);
 
-    // Combine weekly and monthly goals using useMemo to prevent infinite loops
+    // Only Weekly Goals
     const allGoals = React.useMemo(() => {
-        const combined: WeeklyGoalWithSource[] = [];
-
-        const days = getDaysOfWeek(currentWeekStart);
-        const firstDayOfWeek = days[0];
-        const monthKey = `${firstDayOfWeek.getFullYear()}-${firstDayOfWeek.getMonth()}`;
-        const monthGoals = monthlyGoals[monthKey] || [];
-
-        monthGoals.forEach((goal) => {
-            if (goal.title && !hiddenGoals.includes(`monthly-${goal.id}`)) {
-                combined.push({
-                    id: `monthly-${goal.id}`,
-                    title: goal.title,
-                    completedDays: goal.completedDays || {},
-                    source: 'monthly',
-                    parentId: goal.id
-                });
-            }
-        });
-
-        // Add weekly goals
         const weekGoals = goals[weekKey] || [];
-        weekGoals.forEach((goal) => {
-            combined.push({
-                ...goal,
-                source: 'weekly'
-            });
-        });
-
-        return combined;
-    }, [goals, monthlyGoals, weekKey, currentWeekStart, hiddenGoals]);
+        return weekGoals.map(goal => ({
+            ...goal,
+            source: 'weekly' as const
+        }));
+    }, [goals, weekKey]);
 
     // Calculate Weekly Stats (Overview & Progress) - ONLY for Weekly Source Goals
     const weeklyStats = React.useMemo(() => {
@@ -217,42 +196,37 @@ export default function WeeklyPage() {
     };
 
     const handleUpdateTitle = (goal: WeeklyGoalWithSource, title: string) => {
-        if (goal.source === 'monthly') return;
-        updateGoalTitle(weekKey, goal.parentId || goal.id, title);
+        updateGoalTitle(weekKey, goal.id, title);
     };
 
     const toggleDay = async (goal: WeeklyGoalWithSource, dateStr: string) => {
         const currentStatus = goal.completedDays?.[dateStr] || false;
-
-        if (goal.source === 'monthly' && goal.parentId) {
-            const days = getDaysOfWeek(currentWeekStart);
-            const firstDayOfWeek = days[0];
-            const monthKey = `${firstDayOfWeek.getFullYear()}-${firstDayOfWeek.getMonth()}`;
-            await updateMonthlyCompletion(monthKey, goal.parentId, dateStr, !currentStatus);
-        } else {
-            await updateGoalCompletion(weekKey, goal.parentId || goal.id, dateStr, !currentStatus);
-        }
+        await updateGoalCompletion(weekKey, goal.id, dateStr, !currentStatus);
     };
 
     // Verify hidden goals state
     useEffect(() => {
-        console.log('Current hidden weekly goals:', hiddenGoals);
+        // console.log('Current hidden weekly goals:', hiddenGoals);
     }, [hiddenGoals]);
 
     const deleteGoal = async (goal: WeeklyGoalWithSource) => {
-        console.log('Attempting to delete goal:', goal.id, goal.source);
-        if (goal.source === 'monthly') {
-            // Hide monthly goal from weekly view only
-            setHiddenGoals(prev => {
-                if (prev.includes(goal.id)) return prev;
-                const newHidden = [...prev, goal.id];
-                console.log('New hidden goals list:', newHidden);
-                return newHidden;
-            });
-        } else {
-            const weekGoals = goals[weekKey] || [];
-            const updatedGoals = weekGoals.filter(g => g.id !== (goal.parentId || goal.id));
-            await saveGoals(weekKey, updatedGoals);
+        if (!confirm("Are you sure you want to delete this weekly habit?")) return;
+
+        const weekGoals = goals[weekKey] || [];
+
+        // Backup for Undo
+        setUndoBackup(weekGoals);
+        setShowSnackbar(true);
+
+        const updatedGoals = weekGoals.filter(g => g.id !== goal.id);
+        await saveGoals(weekKey, updatedGoals);
+    };
+
+    const handleUndo = async () => {
+        if (undoBackup) {
+            await saveGoals(weekKey, undoBackup);
+            setShowSnackbar(false);
+            setUndoBackup(null);
         }
     };
     const formatDate = (date: Date) => {
@@ -279,7 +253,7 @@ export default function WeeklyPage() {
                     </button>
                     <h1 className={styles.weekTitle}>
                         Week of {formatDate(currentWeekStart)}
-                        {(loading || monthlyLoading) && (
+                        {(loading) && (
                             <span style={{
                                 marginLeft: '1rem',
                                 fontSize: '0.9rem',
@@ -350,26 +324,13 @@ export default function WeeklyPage() {
                         ) : (
                             allGoals.filter(g => !hiddenGoals.includes(g.id)).map((goal) => (
                                 <tr key={goal.id} className={styles.tr}>
-                                    <td className={styles.td} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <td className={styles.td}>
                                         <DebouncedInput
                                             value={goal.title}
                                             onSave={(val) => handleUpdateTitle(goal, val)}
                                             placeholder="Enter goal..."
                                             className={styles.goalInput}
-                                            readOnly={goal.source === 'monthly'}
                                         />
-                                        {goal.source === 'monthly' && (
-                                            <span style={{
-                                                fontSize: '0.75rem',
-                                                color: '#f2994a',
-                                                border: '1px solid #f2994a',
-                                                padding: '2px 6px',
-                                                borderRadius: '4px',
-                                                whiteSpace: 'nowrap'
-                                            }}>
-                                                monthly
-                                            </span>
-                                        )}
                                     </td>
                                     {daysOfWeek.map((day, index) => {
                                         const dateStr = getISODate(day);
@@ -389,7 +350,7 @@ export default function WeeklyPage() {
                                         <button
                                             onClick={() => deleteGoal(goal)}
                                             className={styles.deleteBtn}
-                                            title={goal.source === 'monthly' ? "Hide from this week" : "Delete goal"}
+                                            title="Delete goal"
                                         >
                                             <Trash2 size={16} />
                                         </button>
@@ -434,6 +395,13 @@ export default function WeeklyPage() {
 
 
             </div>
+            <Snackbar
+                message="Weekly habit deleted"
+                isVisible={showSnackbar}
+                onUndo={handleUndo}
+                onClose={() => setShowSnackbar(false)}
+                duration={5000}
+            />
         </div>
     );
 }

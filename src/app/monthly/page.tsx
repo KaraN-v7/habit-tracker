@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import styles from './page.module.css';
 import { ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-react';
 import { useMonthlyGoals, MonthlyGoal } from '@/hooks/useMonthlyGoals';
+import Snackbar from '@/components/Snackbar/Snackbar';
 
 // Debounced Input Component
 const DebouncedInput = ({
@@ -60,6 +61,10 @@ export default function MonthlyPage() {
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [newWinText, setNewWinText] = useState('');
     const { goals, wins, loading, saveGoals, updateGoalCompletion, updateGoalTitle, addWin, deleteWin, user } = useMonthlyGoals();
+
+    // Undo State
+    const [undoBackup, setUndoBackup] = useState<any[] | null>(null);
+    const [showSnackbar, setShowSnackbar] = useState(false);
 
     const getMonthKey = (date: Date) => {
         return `${date.getFullYear()}-${date.getMonth()}`;
@@ -134,8 +139,21 @@ export default function MonthlyPage() {
     };
 
     const deleteGoal = async (id: string) => {
+        if (!confirm("Are you sure you want to delete this monthly habit?")) return;
+
+        setUndoBackup(currentGoals);
+        setShowSnackbar(true);
+
         const updatedGoals = currentGoals.filter(g => g.id !== id);
         await saveGoals(monthKey, updatedGoals);
+    };
+
+    const handleUndo = async () => {
+        if (undoBackup) {
+            await saveGoals(monthKey, undoBackup);
+            setShowSnackbar(false);
+            setUndoBackup(null);
+        }
     };
 
     const handleAddWin = (e: React.FormEvent) => {
@@ -499,7 +517,14 @@ export default function MonthlyPage() {
                 </div>
             </div>
 
-        </div >
+            <Snackbar
+                message="Monthly habit deleted"
+                isVisible={showSnackbar}
+                onUndo={handleUndo}
+                onClose={() => setShowSnackbar(false)}
+                duration={5000}
+            />
+        </div>
     );
 }
 
