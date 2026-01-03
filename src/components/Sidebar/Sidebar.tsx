@@ -101,11 +101,14 @@ const Sidebar: React.FC = () => {
                     <span className={styles.pointsText}>{userPoints || 0} Points</span>
                 </div>
 
-                {!isCollapsed && (
-                    <div style={{ padding: '0 4px', marginBottom: '8px' }}>
-                        <ThemeToggle />
-                    </div>
-                )}
+                <div style={{
+                    padding: '0 4px',
+                    marginBottom: '8px',
+                    display: 'flex',
+                    justifyContent: isCollapsed ? 'center' : 'flex-start'
+                }}>
+                    <ThemeToggle />
+                </div>
                 {/* In collapsed mode, ThemeToggle might be tricky layout-wise, can hide or just show icon if customized. 
                     For now simplifying by hiding or placing it differently if needed. 
                     Let's just hide text in ThemeToggle if it has any, currently it's usually an icon button. 
