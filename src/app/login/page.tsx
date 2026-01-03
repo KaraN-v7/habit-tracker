@@ -8,16 +8,43 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 export default function LoginPage() {
-    const { signInWithGoogle, user, loading } = useAuth();
+    const { signInWithGoogle, user, loading: authLoading } = useAuth(); // rename loading to avoid conflict
     const router = useRouter();
+    const [loginData, setLoginData] = useState({ email: '', password: '' });
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
 
     useEffect(() => {
-        if (!loading && user) {
+        if (!authLoading && user) {
             router.push('/');
         }
-    }, [user, loading, router]);
+    }, [user, authLoading, router]);
 
-    if (loading) {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setLoginData({ ...loginData, [e.target.name]: e.target.value });
+    };
+
+    const handleEmailLogin = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setError('');
+
+        try {
+            const { error } = await supabase.auth.signInWithPassword({
+                email: loginData.email,
+                password: loginData.password,
+            });
+
+            if (error) throw error;
+            // AuthContext or useEffect will handle redirect
+        } catch (error: any) {
+            setError(error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (authLoading) {
         return <div className={styles.container}>Loading...</div>;
     }
 
@@ -27,7 +54,45 @@ export default function LoginPage() {
                 <h1 className={styles.title}>Welcome Back</h1>
                 <p className={styles.subtitle}>Sign in to continue your habit tracking journey</p>
 
+                {error && (
+                    <div className={styles.errorAlert}>
+                        {error}
+                    </div>
+                )}
 
+                <form onSubmit={handleEmailLogin} className={styles.form}>
+                    <div className={styles.inputGroup}>
+                        <label>Email</label>
+                        <input
+                            type="email"
+                            name="email"
+                            value={loginData.email}
+                            onChange={handleChange}
+                            required
+                            placeholder="you@example.com"
+                        />
+                    </div>
+
+                    <div className={styles.inputGroup}>
+                        <label>Password</label>
+                        <input
+                            type="password"
+                            name="password"
+                            value={loginData.password}
+                            onChange={handleChange}
+                            required
+                            placeholder="••••••••"
+                        />
+                    </div>
+
+                    <button type="submit" className={styles.submitButton} disabled={loading}>
+                        {loading ? 'Signing In...' : 'Sign In'}
+                    </button>
+                </form>
+
+                <div className={styles.divider}>
+                    <span>OR</span>
+                </div>
 
                 <button onClick={signInWithGoogle} className={styles.googleButton}>
                     <svg className={styles.icon} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
