@@ -39,6 +39,10 @@ export default function LoginPage() {
                     Sign in with Google
                 </button>
 
+                <p style={{ marginTop: '1.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                    Don't have an account? <Link href="/signup" style={{ color: '#f59e0b', fontWeight: 600 }}>Sign up</Link>
+                </p>
+
 
             </div>
         </div>

@@ -27,8 +27,8 @@ export default function SignupPage() {
     return (
         <div className={styles.container}>
             <div className={styles.card}>
-                <h1 className={styles.title}>Create Account</h1>
-                <p className={styles.subtitle}>Start tracking your habits today</p>
+                <h1 className={styles.title}>Welcome to Ābhyāsa</h1>
+                <p className={styles.subtitle}>Start your habit tracking journey</p>
 
                 {error && (
                     <div style={{
@@ -54,6 +54,10 @@ export default function SignupPage() {
                     </svg>
                     Sign up with Google
                 </button>
+
+                <p style={{ marginTop: '1.5rem', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                    Already have an account? <Link href="/login" style={{ color: '#f59e0b', fontWeight: 600 }}>Sign in</Link>
+                </p>
 
 
             </div>
