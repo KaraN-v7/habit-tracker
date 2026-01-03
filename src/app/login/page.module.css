@@ -80,7 +80,6 @@
 .inputGroup select {
     padding: 14px 16px;
     border-radius: 12px;
-    /* Softer corners */
     border: 1px solid var(--border-color);
     background-color: var(--bg-secondary);
     color: var(--fg-primary);
@@ -88,6 +87,14 @@
     transition: all 0.2s ease;
     width: 100%;
     outline: none;
+    color-scheme: dark;
+    /* Force native pickers to be dark if possible */
+}
+
+/* Style dropdown options */
+.inputGroup option {
+    background-color: var(--bg-card);
+    color: var(--fg-primary);
 }
 
 .inputGroup input:hover,
@@ -99,9 +106,29 @@
 .inputGroup select:focus {
     border-color: var(--accent-orange);
     background-color: var(--bg-primary);
-    /* Slight contrast on focus */
     box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
-    /* Orange focus ring */
+}
+
+/* Password Toggle Button */
+.passwordToggle {
+    position: absolute;
+    right: 12px;
+    top: 38px;
+    /* Approximately center input vertical, adjusted for label */
+    border: none;
+    background: transparent;
+    color: var(--fg-secondary);
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    transition: color 0.2s;
+}
+
+.passwordToggle:hover {
+    color: var(--fg-primary);
 }
 
 /* Primary Button (Create Account / Sign In) */
