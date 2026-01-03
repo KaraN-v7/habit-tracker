@@ -15,6 +15,7 @@ export default function SignupPage() {
         password: '',
     });
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
     const [message, setMessage] = useState('');
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
