@@ -73,6 +73,7 @@ export default function MonthlyPage() {
     };
 
     // Calculate weeks in the month (chunks of 7 days)
+    // Calculate weeks in the month (Standard Calendar Box Logic: Split on Sundays)
     const getWeeksInMonth = (date: Date) => {
         const year = date.getFullYear();
         const month = date.getMonth();
@@ -81,8 +82,11 @@ export default function MonthlyPage() {
         let currentWeek = [];
 
         for (let i = 1; i <= daysInMonth; i++) {
-            currentWeek.push(new Date(year, month, i));
-            if (currentWeek.length === 7 || i === daysInMonth) {
+            const currentDay = new Date(year, month, i);
+            currentWeek.push(currentDay);
+
+            // If it's Sunday (0) or the last day of the month, close the week
+            if (currentDay.getDay() === 0 || i === daysInMonth) {
                 weeks.push(currentWeek);
                 currentWeek = [];
             }
@@ -283,16 +287,31 @@ export default function MonthlyPage() {
                             <thead>
                                 <tr>
                                     <th className={`${styles.th} ${styles.goalColumn}`} rowSpan={3} style={{ verticalAlign: 'middle', textAlign: 'center' }}>HABITS</th>
-                                    {weeks.map((week, i) => (
-                                        <th
-                                            key={`week-${i}`}
-                                            colSpan={week.length}
-                                            className={`${styles.th} ${styles[`thWeek${(i % 6) + 1}`]}`}
-                                            style={{ textAlign: 'center', borderBottom: 'none' }}
-                                        >
-                                            Week {i + 1}
-                                        </th>
-                                    ))}
+                                    {weeks.map((week, i) => {
+                                        let label = `Week ${i + 1}`;
+                                        const isFirstWeek = i === 0;
+                                        const isLastWeek = i === weeks.length - 1;
+
+                                        // "First X Days": If first week and it doesn't start on Monday (1)
+                                        if (isFirstWeek && week[0].getDay() !== 1) {
+                                            label = `First ${week.length} Days`;
+                                        }
+                                        // "Last X Days": If last week (and not also first) and doesn't end on Sunday (0)
+                                        else if (isLastWeek && !isFirstWeek && week[week.length - 1].getDay() !== 0) {
+                                            label = `Last ${week.length} Days`;
+                                        }
+
+                                        return (
+                                            <th
+                                                key={`week-${i}`}
+                                                colSpan={week.length}
+                                                className={`${styles.th} ${styles[`thWeek${(i % 6) + 1}`]}`}
+                                                style={{ textAlign: 'center', borderBottom: 'none' }}
+                                            >
+                                                {label}
+                                            </th>
+                                        );
+                                    })}
                                     <th className={styles.th} rowSpan={3}></th>
                                 </tr>
                                 <tr>
