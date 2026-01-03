@@ -319,7 +319,7 @@ export default function MonthlyPage() {
                                         week.map((day, j) => (
                                             <th
                                                 key={`day-${i}-${j}`}
-                                                className={`${styles.th} ${styles.thDay} ${styles[`thWeek${(i % 6) + 1}`]}`}
+                                                className={`${styles.th} ${styles.thDay} ${styles[`thWeek${(i % 6) + 1}`]} ${j === 0 && i > 0 ? styles.weekSeparator : ''}`}
                                                 style={{ borderBottom: 'none', fontSize: '0.7rem', color: '#555' }}
                                             >
                                                 {day.toLocaleDateString('en-US', { weekday: 'short' })}
@@ -332,7 +332,7 @@ export default function MonthlyPage() {
                                         week.map((day, j) => (
                                             <th
                                                 key={`date-${i}-${j}`}
-                                                className={`${styles.th} ${styles.thDay} ${styles[`thWeek${(i % 6) + 1}`]}`}
+                                                className={`${styles.th} ${styles.thDay} ${styles[`thWeek${(i % 6) + 1}`]} ${j === 0 && i > 0 ? styles.weekSeparator : ''}`}
                                                 style={{ borderTop: 'none', fontWeight: 'bold' }}
                                             >
                                                 {day.getDate()}

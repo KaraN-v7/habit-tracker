@@ -154,10 +154,8 @@
 }
 
 /* Visual separation for weeks using borders instead of heavy backgrounds */
-.thDay:nth-child(7n) {
-    /* Every 7th day (end of week roughly) */
-    border-right: 1px dashed var(--border-color);
-}
+/* Visual separation handled by weekSeparator class now */
+/* .thDay:nth-child(7n) removed to support partial weeks */
 
 /* Goal Input Row */
 .goalInput {
