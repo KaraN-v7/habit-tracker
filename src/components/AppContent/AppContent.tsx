@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import Sidebar from '@/components/Sidebar/Sidebar';
+import Navbar from '@/components/Navbar/Navbar';
 import { useAuth } from '@/context/AuthContext';
 import { usePathname, useRouter } from 'next/navigation';
 
@@ -10,7 +10,6 @@ export default function AppContent({ children }: { children: React.ReactNode }) 
     const pathname = usePathname();
     const router = useRouter();
     const [authTimeout, setAuthTimeout] = useState(false);
-    const [sidebarOpen, setSidebarOpen] = useState(false);
 
     // Set a timeout to prevent infinite loading
     useEffect(() => {
@@ -62,41 +61,12 @@ export default function AppContent({ children }: { children: React.ReactNode }) 
         return null;
     }
 
-    // Mobile header with hamburger button
-    const MobileHeader = (
-        <header className="mobile-header">
-            <button
-                className="hamburger-button"
-                aria-label="Toggle navigation"
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-            >
-                {/* Simple hamburger icon using three bars */}
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect y="4" width="24" height="2" fill="currentColor" />
-                    <rect y="11" width="24" height="2" fill="currentColor" />
-                    <rect y="18" width="24" height="2" fill="currentColor" />
-                </svg>
-            </button>
-            <h1 className="text-xl" style={{ margin: 0, color: 'var(--fg-primary)' }}>Habit Tracker</h1>
-        </header>
-    );
-
     return (
-        <>
-            {MobileHeader}
-            {/* Overlay for mobile sidebar */}
-            <div
-                className={`sidebar-overlay ${sidebarOpen ? 'active' : ''}`}
-                onClick={() => setSidebarOpen(false)}
-            />
-            <div className="app-layout">
-                <Sidebar open={sidebarOpen} />
-                <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden', width: '100%' }}>
-                    <main className="main-content" style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
-                        {children}
-                    </main>
-                </div>
-            </div>
-        </>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+            <Navbar />
+            <main className="main-content" style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', width: '100%', position: 'relative' }}>
+                {children}
+            </main>
+        </div>
     );
 }

@@ -270,18 +270,19 @@ button {
 
 /* Layout */
 .app-layout {
-  display: grid;
-  grid-template-columns: 260px 1fr;
+  display: flex;
+  flex-direction: column;
   height: 100vh;
   overflow: hidden;
   position: relative;
 }
 
 .main-scroll {
-  height: 100vh;
+  height: 100%;
   overflow-y: auto;
   scroll-behavior: smooth;
   padding: var(--space-xl);
+  flex: 1;
 }
 
 /* Cards */
@@ -330,79 +331,4 @@ button {
 .btn-ghost:hover {
   background: var(--bg-hover);
   color: var(--fg-primary);
-}
-
-/* --- RESPONSIVE --- */
-.mobile-header {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 60px;
-  background: var(--bg-card);
-  border-bottom: 1px solid var(--border-color);
-  padding: 0 var(--space-lg);
-  align-items: center;
-  gap: var(--space-md);
-  z-index: 100;
-  box-shadow: var(--shadow-sm);
-}
-
-.hamburger-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  background: var(--bg-secondary);
-  border: none;
-  border-radius: var(--radius-md);
-  color: var(--fg-primary);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.hamburger-button:hover {
-  background: var(--bg-hover);
-  transform: scale(1.05);
-}
-
-.hamburger-button:active {
-  transform: scale(0.95);
-}
-
-/* Sidebar Overlay */
-.sidebar-overlay {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-  z-index: 98;
-  opacity: 0;
-  transition: opacity var(--transition-normal);
-}
-
-.sidebar-overlay.active {
-  display: block;
-  opacity: 1;
-}
-
-@media (max-width: 1280px) {
-  .app-layout {
-    display: block;
-    /* Switch to block layout to remove grid gap */
-  }
-
-  .mobile-header {
-    display: flex;
-  }
-
-  .main-content {
-    margin-top: 60px;
-  }
 }

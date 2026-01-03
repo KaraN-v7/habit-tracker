@@ -19,6 +19,12 @@
     }
 }
 
+.logo {
+    display: flex;
+    align-items: center;
+    padding-bottom: var(--space-md);
+}
+
 .nav {
     display: flex;
     flex-direction: column;
