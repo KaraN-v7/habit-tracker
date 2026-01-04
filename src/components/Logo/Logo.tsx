@@ -21,7 +21,7 @@ const Logo: React.FC<LogoProps> = ({ size = 'medium', showText = true, className
                 height={pxSize}
                 className={styles.logoImage}
             />
-            {showText && <span className={styles.logoText}>Ābhyāsa</span>}
+            {showText && <span className={styles.logoText}>Habit Flow</span>}
         </div>
     );
 };

@@ -73,7 +73,7 @@ export default function SignupPage() {
     return (
         <div className={styles.container}>
             <div className={styles.card}>
-                <h1 className={styles.title}>Welcome to Ābhyāsa</h1>
+                <h1 className={styles.title}>Welcome to Habit Flow</h1>
                 <p className={styles.subtitle}>Start your habit tracking journey</p>
 
                 {error && (
