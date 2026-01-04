@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import styles from './page.module.css';
 import { useLeaderboard, UserDetails } from '@/hooks/useLeaderboard';
 import { useAdmin } from '@/hooks/useAdmin';
-import { Trophy, Medal, Award, HelpCircle, X, ChevronLeft, ChevronRight, Calendar, BookOpen, CheckCircle2, Clock, Target, Trash2, Shield, UserPlus } from 'lucide-react';
+import { Trophy, Medal, Award, HelpCircle, X, ChevronLeft, ChevronRight, Calendar, BookOpen, CheckCircle2, Clock, Target, Trash2, Shield, UserPlus, Zap } from 'lucide-react';
 
 export default function LeaderboardPage() {
     const {
@@ -389,7 +389,7 @@ export default function LeaderboardPage() {
                                 {/* Points Summary */}
                                 <div className={styles.statCard} style={{ gridColumn: '1 / -1', background: 'rgba(245, 158, 11, 0.1)', borderColor: '#f59e0b' }}>
                                     <div className={styles.statIcon} style={{ color: '#f59e0b' }}>
-                                        <Trophy size={24} />
+                                        <Zap size={24} fill="#f59e0b" />
                                     </div>
                                     <div className={styles.statContent}>
                                         <div className={styles.statValue} style={{ color: '#f59e0b' }}>{userDetails.total_points}</div>

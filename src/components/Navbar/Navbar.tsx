@@ -13,7 +13,7 @@ import {
     Calendar,
     CalendarRange,
     Trophy,
-    Star,
+    Zap,
     Menu,
     X,
 } from 'lucide-react';
@@ -92,7 +92,7 @@ const Navbar: React.FC = () => {
 
                 <div className={styles.rightSection}>
                     <div className={styles.pointsBadge}>
-                        <Star size={14} fill="#f59e0b" />
+                        <Zap size={14} fill="#f59e0b" />
                         <span>{userPoints || 0}</span>
                     </div>
 

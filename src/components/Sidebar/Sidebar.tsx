@@ -18,7 +18,7 @@ import {
     ChevronRight,
     Settings,
     LogOut,
-    Star
+    Zap
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useLeaderboard } from '@/hooks/useLeaderboard';
@@ -98,7 +98,7 @@ const Sidebar: React.FC = () => {
             <div className={styles.footer}>
                 {/* Points Display */}
                 <div className={`${styles.pointsBadge} ${isCollapsed ? styles.pointsCollapsed : ''}`}>
-                    <Star size={16} fill="#f59e0b" className={styles.starIcon} />
+                    <Zap size={16} fill="#f59e0b" className={styles.starIcon} />
                     <span className={styles.pointsText}>{userPoints || 0} Points</span>
                 </div>
 
