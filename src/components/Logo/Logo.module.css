@@ -6,6 +6,11 @@
     user-select: none;
     white-space: nowrap;
     width: 100%;
+    gap: 12px;
+}
+
+.logoImage {
+    object-fit: contain;
 }
 
 .logoText {

@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Ābhyāsa",
+  title: "Habit Flow",
   description: "Track your habits and syllabus progress",
 };
 

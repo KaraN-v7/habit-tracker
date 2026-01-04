@@ -2,8 +2,8 @@ import { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
     return {
-        name: 'Ābhyāsa',
-        short_name: 'Ābhyāsa',
+        name: 'Habit Flow',
+        short_name: 'Habit Flow',
         description: 'Track your habits and syllabus progress',
         id: '/?mode=pwa',
         start_url: '/?mode=pwa',
@@ -12,17 +12,17 @@ export default function manifest(): MetadataRoute.Manifest {
         theme_color: '#000000',
         icons: [
             {
-                src: '/force-icon-v5.png',
+                src: '/logo-rounded.png',
                 sizes: '192x192',
                 type: 'image/png',
             },
             {
-                src: '/force-icon-v5.png',
+                src: '/logo-rounded.png',
                 sizes: '512x512',
                 type: 'image/png',
             },
             {
-                src: '/force-icon-v5.png',
+                src: '/logo-rounded.png',
                 sizes: '512x512',
                 type: 'image/png',
                 purpose: 'maskable'

@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import ThemeToggle from '../ThemeToggle/ThemeToggle';
 import Logo from '../Logo/Logo';
@@ -61,7 +62,7 @@ const Sidebar: React.FC = () => {
                 </div>
                 {/* Fallback logo for collapsed state */}
                 <div className={styles.collapsedLogo}>
-                    Ā
+                    <Image src="/logo-rounded.png" alt="HF" width={28} height={28} style={{ objectFit: 'contain' }} />
                 </div>
 
                 <button
