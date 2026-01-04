@@ -19,9 +19,10 @@ export interface UserDetails {
     syllabus_total: number;
     syllabus_completed: number;
     syllabus_percentage: number;
+    longest_streak: number;
 }
 
-export type Period = 'daily' | 'weekly' | 'monthly' | 'yearly';
+export type Period = 'daily' | 'weekly' | 'monthly' | 'yearly' | 'overall';
 
 export function useLeaderboard() {
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -31,7 +32,7 @@ export function useLeaderboard() {
 
     // State for navigation
     const [currentDate, setCurrentDate] = useState(new Date());
-    const [period, setPeriod] = useState<Period>('daily');
+    const [period, setPeriod] = useState<Period>('overall');
 
     useEffect(() => {
         supabase.auth.getUser().then(({ data: { user } }) => {
@@ -67,6 +68,9 @@ export function useLeaderboard() {
 
             end.setMonth(11, 31); // December 31st
             end.setHours(23, 59, 59, 999);
+        } else if (type === 'overall') {
+            start.setFullYear(2026, 0, 1);
+            end.setFullYear(2100, 11, 31);
         }
 
         return { start, end };
@@ -109,27 +113,53 @@ export function useLeaderboard() {
                     start_time: start.toISOString(),
                     end_time: end.toISOString()
                 })
-                .single();
+                .maybeSingle();
 
-            if (statsError) throw statsError;
+            if (statsError) {
+                console.error('Stats Error:', JSON.stringify(statsError, null, 2));
+                // Don't throw, just default to empty
+            }
 
             // 2. Get Syllabus Stats (All Time)
             const { data: syllabusStats, error: syllabusError } = await supabase
                 .rpc('get_user_syllabus_progress', {
                     target_user_id: userId
                 })
-                .single();
+                .maybeSingle();
 
-            if (syllabusError) throw syllabusError;
+            if (syllabusError) {
+                console.error('Syllabus Error:', syllabusError);
+            }
+
+            // Default values in case of missing data
+            const safePeriodStats = periodStats || {
+                goals_completed: 0,
+                chapters_completed: 0,
+                subjects_completed: 0,
+                study_hours: 0,
+                total_points: 0,
+                longest_streak: 0
+            };
+
+            const safeSyllabusStats = syllabusStats || {
+                total_chapters: 0,
+                completed_chapters: 0,
+                percentage: 0
+            };
 
             return {
-                ...(periodStats as any),
-                syllabus_total: (syllabusStats as any).total_chapters,
-                syllabus_completed: (syllabusStats as any).completed_chapters,
-                syllabus_percentage: (syllabusStats as any).percentage
+                goals_completed: (safePeriodStats as any).goals_completed ?? 0,
+                chapters_completed: (safePeriodStats as any).chapters_completed ?? 0,
+                subjects_completed: (safePeriodStats as any).subjects_completed ?? 0,
+                study_hours: (safePeriodStats as any).study_hours ?? 0,
+                total_points: (safePeriodStats as any).total_points ?? 0,
+                longest_streak: (safePeriodStats as any).longest_streak ?? 0,
+                syllabus_total: (safeSyllabusStats as any).total_chapters ?? 0,
+                syllabus_completed: (safeSyllabusStats as any).completed_chapters ?? 0,
+                syllabus_percentage: (safeSyllabusStats as any).percentage ?? 0
             };
         } catch (error) {
-            console.error('Error fetching user details:', error);
+            console.error('Error fetching user details:', JSON.stringify(error, null, 2));
             return null;
         }
     };
@@ -137,19 +167,26 @@ export function useLeaderboard() {
     useEffect(() => {
         fetchLeaderboard();
 
+        if (!currentUser) return;
+
         // Debounce timer for real-time updates
         let debounceTimer: NodeJS.Timeout | null = null;
 
-        const debouncedRefresh = () => {
+        const debouncedRefresh = (payload: any) => {
+            console.log('Realtime Update Received:', payload);
             if (debounceTimer) clearTimeout(debounceTimer);
             debounceTimer = setTimeout(() => {
+                console.log('Refetching Leaderboard due to update...');
                 fetchLeaderboard();
             }, 1000); // Wait 1 second before refreshing
         };
 
-        // Subscribe to profile changes AND points_history changes to refresh leaderboard in real-time
+        // Unique channel name to prevent conflicts between multiple hook instances (Sidebar/Navbar)
+        const channelId = `leaderboard_updates_${currentUser.id}_${Math.random().toString(36).substr(2, 9)}`;
+
+        // Subscribe to profile changes AND points_history changes
         const channel = supabase
-            .channel('leaderboard_updates')
+            .channel(channelId)
             .on(
                 'postgres_changes',
                 {
@@ -162,16 +199,20 @@ export function useLeaderboard() {
             .on(
                 'postgres_changes',
                 {
-                    event: '*',
+                    event: 'INSERT', // Points are mainly INSERTs. We can listen to all, but INSERT is key.
                     schema: 'public',
-                    table: 'points_history'
+                    table: 'points_history',
+                    filter: `user_id=eq.${currentUser.id}` // Only listen to MY points to reduce noise
                 },
                 debouncedRefresh
             )
-            .subscribe();
+            .subscribe((status) => {
+                console.log(`Subscription status for ${channelId}:`, status);
+            });
 
         return () => {
             if (debounceTimer) clearTimeout(debounceTimer);
+            console.log(`Unsubscribing from ${channelId}`);
             supabase.removeChannel(channel);
         };
     }, [currentUser, currentDate, period]);

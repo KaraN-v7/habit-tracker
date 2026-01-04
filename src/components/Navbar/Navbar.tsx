@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useLeaderboard } from '@/hooks/useLeaderboard';
+import CountUp from '../CountUp/CountUp';
 
 const Navbar: React.FC = () => {
     const pathname = usePathname();
@@ -93,7 +94,7 @@ const Navbar: React.FC = () => {
                 <div className={styles.rightSection}>
                     <div className={styles.pointsBadge}>
                         <Zap size={14} fill="#f59e0b" />
-                        <span>{userPoints || 0}</span>
+                        <span><CountUp end={userPoints || 0} /></span>
                     </div>
 
                     <ThemeToggle />

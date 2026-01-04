@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import styles from './page.module.css';
 import { useLeaderboard, UserDetails } from '@/hooks/useLeaderboard';
 import { useAdmin } from '@/hooks/useAdmin';
-import { Trophy, Medal, Award, HelpCircle, X, ChevronLeft, ChevronRight, Calendar, BookOpen, CheckCircle2, Clock, Target, Trash2, Shield, UserPlus, Zap } from 'lucide-react';
+import { Trophy, Medal, Award, HelpCircle, X, ChevronLeft, ChevronRight, Calendar, BookOpen, CheckCircle2, Clock, Target, Trash2, Shield, UserPlus, Zap, Flame } from 'lucide-react';
 
 export default function LeaderboardPage() {
     const {
@@ -33,6 +33,9 @@ export default function LeaderboardPage() {
 
     // Reset State
     const [showResetConfirm, setShowResetConfirm] = useState(false);
+
+    // Dropdown State
+    const [showDaysDropdown, setShowDaysDropdown] = useState(false);
 
     // Date Navigation Handlers
     const navigateDate = (direction: 'prev' | 'next') => {
@@ -86,6 +89,8 @@ export default function LeaderboardPage() {
             return `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
         } else if (period === 'monthly') {
             return currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        } else if (period === 'overall') {
+            return `All Time (Since 2026)`;
         } else {
             // yearly
             return currentDate.getFullYear().toString();
@@ -176,35 +181,101 @@ export default function LeaderboardPage() {
             </header>
 
             {/* Period Tabs */}
-            <div className={styles.tabs}>
+            <div className={styles.tabs} style={{ overflow: 'visible' }}>
                 <button
-                    className={`${styles.tab} ${period === 'daily' ? styles.active : ''}`}
-                    onClick={() => setPeriod('daily')}
+                    className={`${styles.tab} ${period === 'overall' ? styles.active : ''}`}
+                    onClick={() => {
+                        setPeriod('overall');
+                        setShowDaysDropdown(false);
+                    }}
                 >
-                    Today
-                </button>
-                <button
-                    className={`${styles.tab} ${period === 'weekly' ? styles.active : ''}`}
-                    onClick={() => setPeriod('weekly')}
-                >
-                    Week
+                    Overall
                 </button>
                 <button
                     className={`${styles.tab} ${period === 'monthly' ? styles.active : ''}`}
-                    onClick={() => setPeriod('monthly')}
+                    onClick={() => {
+                        setPeriod('monthly');
+                        setShowDaysDropdown(false);
+                    }}
                 >
-                    Month
+                    Months
                 </button>
-                <button
-                    className={`${styles.tab} ${period === 'yearly' ? styles.active : ''}`}
-                    onClick={() => setPeriod('yearly')}
-                >
-                    Year
-                </button>
+
+                {/* Days Dropdown Container */}
+                <div style={{ position: 'relative', display: 'flex', flexDirection: 'column' }}>
+                    <button
+                        className={`${styles.tab} ${(period === 'daily' || period === 'weekly') ? styles.active : ''}`}
+                        onClick={() => {
+                            // If not already on daily/weekly, switch to daily
+                            if (period !== 'daily' && period !== 'weekly') {
+                                setPeriod('daily');
+                            }
+                            // Toggle dropdown
+                            setShowDaysDropdown(!showDaysDropdown);
+                        }}
+                    >
+                        Days {(period === 'daily' || period === 'weekly') && <span style={{ fontSize: '0.7em', marginLeft: '4px' }}>▼</span>}
+                    </button>
+
+                    {showDaysDropdown && (
+                        <div style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: 0,
+                            right: 0,
+                            background: 'var(--bg-card)',
+                            border: '1px solid var(--border-color)',
+                            borderRadius: '0 0 8px 8px',
+                            zIndex: 10,
+                            marginTop: '2px',
+                            overflow: 'hidden',
+                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                        }}>
+                            <button
+                                style={{
+                                    width: '100%',
+                                    padding: '8px',
+                                    textAlign: 'left',
+                                    background: period === 'daily' ? 'var(--bg-hover)' : 'transparent',
+                                    border: 'none',
+                                    color: 'var(--text-primary)',
+                                    cursor: 'pointer',
+                                    fontSize: '0.9rem'
+                                }}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setPeriod('daily');
+                                    setShowDaysDropdown(false);
+                                }}
+                            >
+                                Daily
+                            </button>
+                            <button
+                                style={{
+                                    width: '100%',
+                                    padding: '8px',
+                                    textAlign: 'left',
+                                    background: period === 'weekly' ? 'var(--bg-hover)' : 'transparent',
+                                    border: 'none',
+                                    color: 'var(--text-primary)',
+                                    cursor: 'pointer',
+                                    fontSize: '0.9rem'
+                                }}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setPeriod('weekly');
+                                    setShowDaysDropdown(false);
+                                }}
+                            >
+                                Weekly
+                            </button>
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Date Navigation */}
-            <div className={styles.dateNav}>
+            <div className={styles.dateNav} style={{ opacity: period === 'overall' ? 0.5 : 1, pointerEvents: period === 'overall' ? 'none' : 'auto' }}>
                 <button onClick={() => navigateDate('prev')} className={styles.navBtn}>
                     <ChevronLeft size={20} />
                 </button>
@@ -397,6 +468,19 @@ export default function LeaderboardPage() {
                                     </div>
                                 </div>
 
+                                {/* Longest Streak (Visible only in Overall/Monthly) */}
+                                {(period === 'overall' || period === 'monthly') && (
+                                    <div className={styles.statCard} style={{ gridColumn: '1 / -1', background: 'rgba(239, 68, 68, 0.1)', borderColor: '#ef4444' }}>
+                                        <div className={styles.statIcon} style={{ color: '#ef4444' }}>
+                                            <Flame size={24} fill="#ef4444" />
+                                        </div>
+                                        <div className={styles.statContent}>
+                                            <div className={styles.statValue} style={{ color: '#ef4444' }}>{userDetails.longest_streak}</div>
+                                            <div className={styles.statLabel}>Longest Streak (Days)</div>
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* Goals */}
                                 <div className={styles.statCard}>
                                     <div className={styles.statIcon} style={{ color: '#3b82f6' }}>
@@ -485,41 +569,35 @@ export default function LeaderboardPage() {
                         <h2 className={styles.modalTitle}>How Points Work</h2>
 
                         <div className={styles.pointsSection}>
-                            <h3>📝 Daily Goals</h3>
+                            <h3>🔥 The Streak System</h3>
+                            <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem', lineHeight: '1.5' }}>
+                                This leaderboard is ranked purely by <strong>Streak Points</strong>. Consistency is the only metric that matters here.
+                            </p>
+
                             <div className={styles.pointItem}>
-                                <span>Complete a task</span>
-                                <strong>+2 points</strong>
+                                <span>Maintain a Streak</span>
+                                <strong>+2 points / day</strong>
                             </div>
-                            <div className={styles.pointItem}>
-                                <span>Study hours (per hour)</span>
-                                <strong>+10 points</strong>
-                            </div>
-                            <div className={styles.example}>
-                                Example: "Study Math 2 hours" = +2 (task) + +20 (hours) = <strong>22 points</strong>
+                            <div className={styles.example} style={{ marginTop: '0.5rem' }}>
+                                Complete a Monthly or Weekly habit for 2+ consecutive days to start earning.
+                                <br />
+                                <span style={{ fontSize: '0.85rem', opacity: 0.8 }}>(Broken streaks earn 0 points until restarted)</span>
                             </div>
                         </div>
 
                         <div className={styles.pointsSection}>
-                            <h3>📚 Syllabus</h3>
-                            <div className={styles.pointItem}>
-                                <span>Complete a chapter</span>
-                                <strong>+10 points</strong>
+                            <h3>📊 Stats Tracking (No Points)</h3>
+                            <div className={styles.pointItem} style={{ opacity: 0.8 }}>
+                                <span>Study Hours</span>
+                                <strong>Tracked for Profile</strong>
                             </div>
-                            <div className={styles.pointItem}>
-                                <span>Complete all chapters in a subject</span>
-                                <strong>+20 points bonus</strong>
+                            <div className={styles.pointItem} style={{ opacity: 0.8 }}>
+                                <span>Syllabus Completion</span>
+                                <strong>Tracked for Profile</strong>
                             </div>
-                            <div className={styles.pointItem}>
-                                <span className={styles.highlight}>Complete ENTIRE syllabus</span>
-                                <strong className={styles.highlight}>+100 points bonus!</strong>
-                            </div>
-                        </div>
-
-                        <div className={styles.pointsSection}>
-                            <h3>📅 Weekly & Monthly Goals</h3>
-                            <div className={styles.pointItem}>
-                                <span>Same as daily goals</span>
-                                <strong>+2 per task, +10 per hour</strong>
+                            <div className={styles.pointItem} style={{ opacity: 0.8 }}>
+                                <span>Daily To-Do Tasks</span>
+                                <strong>Tracked for Profile</strong>
                             </div>
                         </div>
 

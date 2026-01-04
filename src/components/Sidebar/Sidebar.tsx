@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useLeaderboard } from '@/hooks/useLeaderboard';
+import CountUp from '../CountUp/CountUp';
 
 const Sidebar: React.FC = () => {
     const pathname = usePathname();
@@ -99,7 +100,7 @@ const Sidebar: React.FC = () => {
                 {/* Points Display */}
                 <div className={`${styles.pointsBadge} ${isCollapsed ? styles.pointsCollapsed : ''}`}>
                     <Zap size={16} fill="#f59e0b" className={styles.starIcon} />
-                    <span className={styles.pointsText}>{userPoints || 0} Points</span>
+                    <span className={styles.pointsText}><CountUp end={userPoints || 0} /> Points</span>
                 </div>
 
                 <div style={{

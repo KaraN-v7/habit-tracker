@@ -74,13 +74,19 @@ export default function AnalyticsPage() {
         if (goal.chapterId) return true; // Always count syllabus chapters
 
         const text = goal.content || goal.title || '';
+        const lowerText = text.toLowerCase();
+
+        // Exclude common false positives
+        if (lowerText.includes('social media')) return false;
+        if (lowerText.includes('avoid')) return false; // Usually used for "Avoid x" habits which are not study
+
         const studyKeywords = [
             'study', 'revision', 'practice', 'learn', 'read', 'test', 'exam', 'homework', 'assignment', 'chapter',
             'math', 'maths', 'science', 'sci', 'english', 'eng', 'physics', 'phy', 'chemistry', 'chem', 'biology', 'bio',
             'sst', 'social', 'history', 'hist', 'geography', 'geo', 'civics', 'economics', 'eco',
             'hindi', 'sanskrit', 'sans', 'computer', 'comp', 'coding', 'programming', 'it', 'cs'
         ];
-        const lowerText = text.toLowerCase();
+
         return studyKeywords.some(keyword => lowerText.includes(keyword));
     };
 

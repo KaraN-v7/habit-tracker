@@ -89,6 +89,11 @@ export function useSubjectRecognition() {
 
         const lowerText = text.toLowerCase();
 
+        // BLOCKLIST: Prevent common false positives
+        if (lowerText.includes('social media')) {
+            return { canonical_name: null, color: null, matched_variation: null };
+        }
+
         // First check for subjects in parentheses (from Syllabus push)
         const parenMatch = text.match(/\(([^)]+)\)$/);
         if (parenMatch) {
