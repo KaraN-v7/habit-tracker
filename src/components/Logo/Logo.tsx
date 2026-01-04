@@ -16,7 +16,7 @@ const Logo: React.FC<LogoProps> = ({ size = 'medium', showText = true, className
         <div className={`${styles.logoContainer} ${styles[size]} ${className}`}>
             <Image
                 src="/logo-rounded.png"
-                alt="Habit Flow"
+                alt="Ābhyāsa"
                 width={pxSize}
                 height={pxSize}
                 className={styles.logoImage}
