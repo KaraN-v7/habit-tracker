@@ -2,8 +2,8 @@ import { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
     return {
-        name: 'Habit Flow',
-        short_name: 'Habit Flow',
+        name: 'Ābhyāsa',
+        short_name: 'Ābhyāsa',
         description: 'Track your habits and syllabus progress',
         id: '/?mode=pwa',
         start_url: '/?mode=pwa',
