@@ -81,7 +81,7 @@ export default function Home() {
   }, [currentDate, weeklyGoals, monthlyGoals, dateKey, weeklyLoading, monthlyLoading]);
 
   const dailyOnlyGoals = goals[dateKey] || [];
-  const currentBlocks = [...inheritedGoals, ...dailyOnlyGoals];
+  const currentBlocks = [...dailyOnlyGoals, ...inheritedGoals];
 
   const updateGoals = async (newBlocks: Block[]) => {
     // Only save daily-created goals
@@ -112,7 +112,7 @@ export default function Home() {
       newBlocks.push(newBlock);
     }
 
-    await updateGoals([...inheritedGoals, ...newBlocks]);
+    await updateGoals([...newBlocks, ...inheritedGoals]);
 
     // Focus the new block after state update
     setTimeout(() => {
@@ -182,7 +182,7 @@ export default function Home() {
       }
     }
     const newBlocks = dailyOnlyGoals.filter(b => b.id !== id);
-    await updateGoals([...inheritedGoals, ...newBlocks]);
+    await updateGoals([...newBlocks, ...inheritedGoals]);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent, id: string) => {
@@ -277,22 +277,23 @@ export default function Home() {
       </header>
 
       <div className={styles.editor}>
+        {/* Empty State */}
         {currentBlocks.length === 0 && (
           <div className={styles.emptyState} onClick={() => addBlock()}>
             Click here to add your first goal for today...
           </div>
         )}
-        {currentBlocks.map((block) => (
+
+        {/* Daily Goals Section */}
+        {dailyOnlyGoals.map((block) => (
           <div key={block.id} className={`${styles.block} ${block.completed ? styles.completed : ''}`}>
-            {(!block.source || block.source === 'daily') && (
-              <div
-                className={styles.blockControls}
-                onClick={() => toggleType(block.id)}
-                title="Click to toggle between Task and Note"
-              >
-                ⋮⋮
-              </div>
-            )}
+            <div
+              className={styles.blockControls}
+              onClick={() => toggleType(block.id)}
+              title="Click to toggle between Task and Note"
+            >
+              ⋮⋮
+            </div>
 
             {block.type === 'todo' && (
               <div
@@ -308,40 +309,75 @@ export default function Home() {
               className={styles.contentInput}
               value={block.content}
               onChange={(e) => {
-                if (!block.source || block.source === 'daily') {
-                  updateBlock(block.id, { content: e.target.value });
-                  adjustHeight(e.target);
-                }
+                updateBlock(block.id, { content: e.target.value });
+                adjustHeight(e.target);
               }}
               onKeyDown={(e) => handleKeyDown(e, block.id)}
               placeholder={block.type === 'todo' ? "To-do" : "Type something..."}
               rows={1}
               onInput={(e) => adjustHeight(e.currentTarget)}
-              readOnly={block.source === 'weekly' || block.source === 'monthly'}
-              style={{
-                cursor: (block.source === 'weekly' || block.source === 'monthly') ? 'default' : 'text',
-                flex: 1
-              }}
+              style={{ flex: 1 }}
             />
-
-            {block.source === 'monthly' && (
-              <span className={styles.sourceLabel} style={{ color: '#f2994a', borderColor: '#f2994a' }}>monthly</span>
-            )}
-            {block.source === 'weekly' && (
-              <span className={styles.sourceLabel} style={{ color: '#9b59b6', borderColor: '#9b59b6' }}>weekly</span>
-            )}
           </div>
         ))}
-      </div>
 
-      {(currentBlocks.length > 0 || dailyOnlyGoals.length > 0) && (
-        <div
-          className={styles.addBlockArea}
-          onClick={() => addBlock(dailyOnlyGoals.length > 0 ? dailyOnlyGoals[dailyOnlyGoals.length - 1].id : null)}
-        >
-          + Click to add a block
-        </div>
-      )}
+        {/* Add Goal Button positioned immediately after daily goals */}
+        {(currentBlocks.length > 0 || dailyOnlyGoals.length > 0) && (
+          <div
+            className={styles.addBlockArea}
+            onClick={() => addBlock(dailyOnlyGoals.length > 0 ? dailyOnlyGoals[dailyOnlyGoals.length - 1].id : null)}
+            style={{ margin: '1rem 0 2rem 0' }}
+          >
+            + Click to add a goal
+          </div>
+        )}
+
+        {/* Inherited Goals Section (Weekly/Monthly) */}
+        {inheritedGoals.length > 0 && (
+          <>
+            <div style={{
+              margin: '2rem 0 1rem 0',
+              paddingBottom: '0.5rem',
+              borderBottom: '1px solid var(--border-color)',
+              color: 'var(--fg-secondary)',
+              fontSize: '0.9rem',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}>
+              HABITS FOR TODAY
+            </div>
+            {inheritedGoals.map((block) => (
+              <div key={block.id} className={`${styles.block} ${block.completed ? styles.completed : ''}`}>
+                {block.type === 'todo' && (
+                  <div
+                    className={`${styles.checkbox} ${block.completed ? styles.checked : ''}`}
+                    onClick={() => updateBlock(block.id, { completed: !block.completed })}
+                  >
+                    {block.completed && <span className={styles.checkIcon}>✓</span>}
+                  </div>
+                )}
+
+                <textarea
+                  className={styles.contentInput}
+                  value={block.content}
+                  readOnly
+                  rows={1}
+                  style={{ cursor: 'default', flex: 1 }}
+                />
+
+                {block.source === 'monthly' && (
+                  <span className={styles.sourceLabel} style={{ color: '#f2994a', borderColor: '#f2994a' }}>monthly</span>
+                )}
+                {block.source === 'weekly' && (
+                  <span className={styles.sourceLabel} style={{ color: '#9b59b6', borderColor: '#9b59b6' }}>weekly</span>
+                )}
+              </div>
+            ))}
+          </>
+        )}
+      </div>
     </div>
   );
 }

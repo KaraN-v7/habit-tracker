@@ -116,6 +116,7 @@ export default function MonthlyPage() {
     const currentWins = wins[monthKey] || [];
     const weeks = getWeeksInMonth(currentMonth);
     const daysInMonth = weeks.flat();
+    const todayStr = getISODate(new Date());
 
     const addGoal = async () => {
         const newGoal = {
@@ -334,28 +335,36 @@ export default function MonthlyPage() {
                                 </tr>
                                 <tr>
                                     {weeks.map((week, i) => (
-                                        week.map((day, j) => (
-                                            <th
-                                                key={`day-${i}-${j}`}
-                                                className={`${styles.th} ${styles.thDay} ${styles[`thWeek${(i % 6) + 1}`]} ${j === 0 && i > 0 ? styles.weekSeparator : ''}`}
-                                                style={{ borderBottom: 'none', fontSize: '0.7rem', color: '#555' }}
-                                            >
-                                                {day.toLocaleDateString('en-US', { weekday: 'short' })}
-                                            </th>
-                                        ))
+                                        week.map((day, j) => {
+                                            const dateStr = getISODate(day);
+                                            const isToday = dateStr === todayStr;
+                                            return (
+                                                <th
+                                                    key={`day-${i}-${j}`}
+                                                    className={`${styles.th} ${styles.thDay} ${styles[`thWeek${(i % 6) + 1}`]} ${j === 0 && i > 0 ? styles.weekSeparator : ''} ${isToday ? styles.currentDay : ''}`}
+                                                    style={{ borderBottom: 'none', fontSize: '0.7rem', color: '#555' }}
+                                                >
+                                                    {day.toLocaleDateString('en-US', { weekday: 'short' })}
+                                                </th>
+                                            );
+                                        })
                                     ))}
                                 </tr>
                                 <tr>
                                     {weeks.map((week, i) => (
-                                        week.map((day, j) => (
-                                            <th
-                                                key={`date-${i}-${j}`}
-                                                className={`${styles.th} ${styles.thDay} ${styles[`thWeek${(i % 6) + 1}`]} ${j === 0 && i > 0 ? styles.weekSeparator : ''}`}
-                                                style={{ borderTop: 'none', fontWeight: 'bold' }}
-                                            >
-                                                {day.getDate()}
-                                            </th>
-                                        ))
+                                        week.map((day, j) => {
+                                            const dateStr = getISODate(day);
+                                            const isToday = dateStr === todayStr;
+                                            return (
+                                                <th
+                                                    key={`date-${i}-${j}`}
+                                                    className={`${styles.th} ${styles.thDay} ${styles[`thWeek${(i % 6) + 1}`]} ${j === 0 && i > 0 ? styles.weekSeparator : ''} ${isToday ? styles.currentDay : ''}`}
+                                                    style={{ borderTop: 'none', fontWeight: 'bold' }}
+                                                >
+                                                    {day.getDate()}
+                                                </th>
+                                            );
+                                        })
                                     ))}
                                 </tr>
                             </thead>
@@ -363,7 +372,7 @@ export default function MonthlyPage() {
                                 {currentGoals.length === 0 ? (
                                     <tr>
                                         <td colSpan={daysInMonth.length + 2} className={styles.td} style={{ textAlign: 'center', color: 'var(--fg-secondary)', padding: '2rem' }}>
-                                            No monthly goals yet. Click the button below to add one!
+                                            No monthly habits yet. Click the button below to add one!
                                         </td>
                                     </tr>
                                 ) : (
@@ -373,7 +382,7 @@ export default function MonthlyPage() {
                                                 <DebouncedInput
                                                     value={goal.title}
                                                     onSave={(val) => handleUpdateTitle(goal.id, val)}
-                                                    placeholder="Enter goal..."
+                                                    placeholder="Enter habit..."
                                                     className={styles.goalInput}
                                                 />
                                             </td>
@@ -384,11 +393,12 @@ export default function MonthlyPage() {
                                                     const weekClass = styles[`week${(weekIndex % 6) + 1}`];
                                                     // Add separator class to first day of each week (except week 1)
                                                     const isWeekStart = dayIndex === 0 && weekIndex > 0;
+                                                    const isToday = dateStr === todayStr;
 
                                                     return (
                                                         <td
                                                             key={`${weekIndex}-${dayIndex}`}
-                                                            className={`${styles.td} ${styles.checkboxCell} ${weekClass} ${isWeekStart ? styles.weekSeparator : ''}`}
+                                                            className={`${styles.td} ${styles.checkboxCell} ${weekClass} ${isWeekStart ? styles.weekSeparator : ''} ${isToday ? styles.currentDay : ''}`}
                                                         >
                                                             <div
                                                                 className={`${styles.checkbox} ${isCompleted ? styles.checked : ''}`}
@@ -405,7 +415,7 @@ export default function MonthlyPage() {
                                                 <button
                                                     onClick={() => deleteGoal(goal.id)}
                                                     className={styles.deleteBtn}
-                                                    title="Delete goal"
+                                                    title="Delete habit"
                                                 >
                                                     <Trash2 size={14} />
                                                 </button>
@@ -446,7 +456,7 @@ export default function MonthlyPage() {
 
                     <button onClick={addGoal} className={styles.addGoalBtn}>
                         <Plus size={20} />
-                        <span>Add Monthly Goal</span>
+                        <span>Add Monthly Habit</span>
                     </button>
                 </div>
 
@@ -456,7 +466,7 @@ export default function MonthlyPage() {
                         <h3 className={styles.progressTitle}>Monthly Progress</h3>
                         {currentGoals.length === 0 ? (
                             <div style={{ color: 'var(--fg-secondary)', fontSize: '0.9rem' }}>
-                                Add goals to track progress
+                                Add habits to track progress
                             </div>
                         ) : (
                             currentGoals.map(goal => {
@@ -470,7 +480,7 @@ export default function MonthlyPage() {
                                                 style={{ flex: 1, marginRight: '24px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 600, fontSize: '0.95rem' }}
                                                 title={goal.title}
                                             >
-                                                {goal.title || 'Untitled Goal'}
+                                                {goal.title || 'Untitled Habit'}
                                             </span>
                                             <span className={styles.progressValue} style={{ fontSize: '0.75rem', whiteSpace: 'nowrap', opacity: 0.9 }}>
                                                 {completedCount}/{total} days ({progress}%)

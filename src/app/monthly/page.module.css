@@ -226,6 +226,25 @@
     font-weight: 800;
 }
 
+/* Current Day Highlight */
+.currentDay {
+    background-color: rgba(16, 185, 129, 0.08);
+    /* Subtle green tint */
+    border-left: 2px solid var(--accent-green);
+    /* Vertical line indicator */
+    border-right: 2px solid var(--accent-green);
+}
+
+/* Special handling for header cells to close the box top */
+.th.currentDay {
+    border-top: 2px solid var(--accent-green);
+}
+
+/* Special handling for last row cells to close the box bottom */
+.tr:last-child .td.currentDay {
+    border-bottom: 2px solid var(--accent-green);
+}
+
 /* Animations Keyframes */
 @keyframes pulse-green {
     0% {

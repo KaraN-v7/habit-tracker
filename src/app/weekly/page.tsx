@@ -131,6 +131,7 @@ export default function WeeklyPage() {
 
     const weekKey = getWeekKey(currentWeekStart);
     const daysOfWeek = getDaysOfWeek(currentWeekStart);
+    const todayStr = getISODate(new Date());
     const [hiddenGoals, setHiddenGoals] = useState<string[]>([]);
 
     // Load hidden goals from local storage on mount
@@ -305,12 +306,15 @@ export default function WeeklyPage() {
                     <thead>
                         <tr>
                             <th className={styles.th} style={{ width: '40%' }}>Goal</th>
-                            {daysOfWeek.map((day, index) => (
-                                <th key={index} className={`${styles.th} ${styles.thDay}`}>
-                                    <div>{day.toLocaleDateString('en-US', { weekday: 'short' })}</div>
-                                    <div>{day.getDate()}</div>
-                                </th>
-                            ))}
+                            {daysOfWeek.map((day, index) => {
+                                const isToday = getISODate(day) === todayStr;
+                                return (
+                                    <th key={index} className={`${styles.th} ${styles.thDay} ${isToday ? styles.currentDay : ''}`}>
+                                        <div>{day.toLocaleDateString('en-US', { weekday: 'short' })}</div>
+                                        <div>{day.getDate()}</div>
+                                    </th>
+                                );
+                            })}
                             <th className={styles.th} style={{ width: '50px' }}></th>
                         </tr>
                     </thead>
@@ -318,7 +322,7 @@ export default function WeeklyPage() {
                         {allGoals.filter(g => !hiddenGoals.includes(g.id)).length === 0 ? (
                             <tr>
                                 <td colSpan={9} className={styles.td} style={{ textAlign: 'center', color: 'var(--fg-secondary)' }}>
-                                    No weekly goals yet. Click the button below to add one!
+                                    No weekly habits yet. Click the button below to add one!
                                 </td>
                             </tr>
                         ) : (
@@ -328,15 +332,16 @@ export default function WeeklyPage() {
                                         <DebouncedInput
                                             value={goal.title}
                                             onSave={(val) => handleUpdateTitle(goal, val)}
-                                            placeholder="Enter goal..."
+                                            placeholder="Enter habit..."
                                             className={styles.goalInput}
                                         />
                                     </td>
                                     {daysOfWeek.map((day, index) => {
                                         const dateStr = getISODate(day);
                                         const isCompleted = goal.completedDays?.[dateStr] || false;
+                                        const isToday = dateStr === todayStr;
                                         return (
-                                            <td key={index} className={`${styles.td} ${styles.checkboxCell}`}>
+                                            <td key={index} className={`${styles.td} ${styles.checkboxCell} ${isToday ? styles.currentDay : ''}`}>
                                                 <div
                                                     className={`${styles.checkbox} ${isCompleted ? styles.checked : ''}`}
                                                     onClick={() => toggleDay(goal, dateStr)}
@@ -350,7 +355,7 @@ export default function WeeklyPage() {
                                         <button
                                             onClick={() => deleteGoal(goal)}
                                             className={styles.deleteBtn}
-                                            title="Delete goal"
+                                            title="Delete habit"
                                         >
                                             <Trash2 size={16} />
                                         </button>
@@ -364,7 +369,7 @@ export default function WeeklyPage() {
 
             <button onClick={addGoal} className={styles.addGoalBtn}>
                 <Plus size={20} />
-                <span>Add Weekly Goal</span>
+                <span>Add Weekly Habit</span>
             </button>
 
             {/* Bottom Stats Section */}
@@ -372,12 +377,12 @@ export default function WeeklyPage() {
                 <div className={styles.progressCard}>
                     <h3 className={styles.progressTitle}>Weekly Progress</h3>
                     {weeklyStats.progressData.length === 0 ? (
-                        <div style={{ color: 'var(--fg-secondary)', fontSize: '0.9rem' }}>No weekly goals added yet.</div>
+                        <div style={{ color: 'var(--fg-secondary)', fontSize: '0.9rem' }}>No weekly habits added yet.</div>
                     ) : (
                         weeklyStats.progressData.map(stat => (
                             <div key={stat.id} className={styles.progressItem}>
                                 <div className={styles.progressLabel}>
-                                    <span>{stat.title || 'Untitled Goal'}</span>
+                                    <span>{stat.title || 'Untitled Habit'}</span>
                                     <span className={styles.progressValue}>
                                         {stat.current}/{stat.total} days ({stat.progress}%)
                                     </span>
